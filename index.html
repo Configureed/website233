@@ -1,0 +1,1730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Bkamt.xyz — OSINT & VoIP Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800;900&family=Barlow+Condensed:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#03030a;
+  --surface:rgba(7,7,18,0.85);
+  --surface2:rgba(10,10,22,0.92);
+  --surface3:rgba(13,13,28,0.97);
+  --border:rgba(45,65,110,0.28);
+  --border-h:rgba(70,130,255,0.45);
+  --blue:#3b7eff;
+  --blue2:#6fa8ff;
+  --blue3:#a8cbff;
+  --blue-dim:rgba(59,126,255,0.12);
+  --red:#ff4757;
+  --amber:#ffb830;
+  --purple:#a78bfa;
+  --text:#e8eeff;
+  --text2:#7a8db5;
+  --text3:#404f72;
+  --font:'Barlow',sans-serif;
+  --font-c:'Barlow Condensed',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--font);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:var(--blue);border-radius:99px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ─── BACKGROUND ─── */
+.bg-scene{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.bg-scene::before{content:'';position:absolute;top:-15%;left:50%;transform:translateX(-50%);width:1400px;height:800px;background:radial-gradient(ellipse,rgba(20,70,220,0.1) 0%,transparent 65%);filter:blur(90px)}
+.bg-scene::after{content:'';position:absolute;bottom:-10%;right:-5%;width:800px;height:700px;background:radial-gradient(ellipse,rgba(30,60,200,0.04) 0%,transparent 60%);filter:blur(120px)}
+.bg-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(59,126,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(59,126,255,0.025) 1px,transparent 1px);background-size:60px 60px;mask-image:radial-gradient(ellipse 110% 90% at 50% 0%,black 15%,transparent 100%)}
+.bg-vignette{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 85% 85% at 50% 50%,transparent 35%,rgba(3,3,10,0.65) 100%)}
+
+/* ─── NAV ─── */
+nav{position:fixed;top:0;left:0;right:0;z-index:500;height:62px;display:flex;align-items:center;justify-content:space-between;padding:0 36px;background:rgba(3,3,10,0.88);backdrop-filter:blur(32px);border-bottom:1px solid var(--border)}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text)}
+.nav-brand{font-family:var(--font-c);font-size:1.3rem;font-weight:900;letter-spacing:0.06em;color:var(--text);text-transform:uppercase}
+.nav-brand span{color:var(--blue2)}
+.nav-links{display:flex;align-items:center;gap:2px}
+.nav-link{padding:6px 14px;border-radius:7px;font-size:0.84rem;font-weight:600;color:var(--text2);text-decoration:none;transition:all 0.2s;cursor:pointer;background:transparent;border:none;font-family:var(--font);letter-spacing:0.02em}
+.nav-link:hover{color:var(--text);background:rgba(255,255,255,0.04)}
+.nav-link.active{color:var(--blue2)}
+.nav-actions{display:flex;align-items:center;gap:10px}
+.nav-btn-login{padding:7px 18px;border-radius:7px;background:transparent;border:1px solid var(--border-h);color:var(--blue2);font-size:0.82rem;font-weight:700;cursor:pointer;font-family:var(--font);transition:all 0.2s;letter-spacing:0.02em}
+.nav-btn-login:hover{background:rgba(59,126,255,0.1)}
+.nav-btn-cta{padding:7px 20px;border-radius:7px;background:var(--blue);color:#fff;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:var(--font);transition:all 0.2s;border:none;letter-spacing:0.02em}
+.nav-btn-cta:hover{background:#2a68ee;transform:translateY(-1px)}
+.nav-user-badge{display:flex;align-items:center;gap:8px;padding:5px 14px 5px 8px;border-radius:20px;background:rgba(59,126,255,0.1);border:1px solid rgba(59,126,255,0.22);cursor:pointer;transition:all 0.2s}
+.nav-user-badge:hover{background:rgba(59,126,255,0.17)}
+.nav-avatar{width:26px;height:26px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:800;color:#fff}
+.nav-username{font-size:0.8rem;font-weight:700;color:var(--blue2);letter-spacing:0.03em}
+.nav-logout{padding:7px 14px;border-radius:7px;background:transparent;border:1px solid rgba(255,71,87,0.25);color:var(--red);font-size:0.8rem;font-weight:700;cursor:pointer;font-family:var(--font);transition:all 0.2s}
+.nav-logout:hover{background:rgba(255,71,87,0.08);border-color:rgba(255,71,87,0.5)}
+@media(max-width:768px){.nav-links{display:none}}
+
+/* ─── PAGES ─── */
+.page{position:relative;z-index:1}
+.hidden{display:none!important}
+section{padding:90px 24px}
+.container{max-width:1100px;margin:0 auto}
+
+/* ─── HERO ─── */
+#hero{padding-top:145px;padding-bottom:80px;text-align:center}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:5px 18px;border-radius:99px;border:1px solid rgba(59,126,255,0.28);background:rgba(59,126,255,0.06);font-size:10.5px;font-family:var(--font-c);font-weight:700;color:var(--blue2);letter-spacing:0.18em;text-transform:uppercase;margin-bottom:32px;animation:fadeIn 0.8s ease}
+.hero-badge-dot{width:5px;height:5px;border-radius:50%;background:var(--blue2);box-shadow:0 0 8px var(--blue2);animation:pulse 2s infinite}
+h1.hero-title{font-family:var(--font-c);font-size:clamp(3.2rem,8.5vw,6.2rem);font-weight:900;letter-spacing:-0.02em;line-height:0.93;margin-bottom:28px;text-transform:uppercase;animation:slideUp 0.7s ease both}
+.accent-b{color:var(--blue2)}
+.hero-sub{color:var(--text2);font-size:clamp(0.95rem,2vw,1.08rem);max-width:500px;margin:0 auto 44px;line-height:1.85;font-weight:400;animation:slideUp 0.7s 0.1s ease both}
+.hero-btns{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;animation:slideUp 0.7s 0.2s ease both}
+.btn-primary{padding:13px 28px;border-radius:9px;background:var(--blue);color:#fff;font-size:0.88rem;font-weight:700;text-decoration:none;transition:all 0.2s;border:none;cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;gap:8px;letter-spacing:0.03em}
+.btn-primary:hover{background:#2a68ee;transform:translateY(-2px);box-shadow:0 12px 40px rgba(59,126,255,0.38)}
+.btn-secondary{padding:13px 28px;border-radius:9px;background:transparent;color:var(--text2);font-size:0.88rem;font-weight:600;text-decoration:none;transition:all 0.2s;border:1px solid var(--border);cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;gap:8px}
+.btn-secondary:hover{border-color:var(--border-h);color:var(--blue2);background:rgba(59,126,255,0.06)}
+.hero-stats{display:flex;align-items:center;justify-content:center;gap:56px;margin-top:74px;flex-wrap:wrap;animation:slideUp 0.7s 0.3s ease both}
+.stat{text-align:center}
+.stat-num{font-family:var(--font-c);font-size:2.3rem;font-weight:900;color:var(--text);letter-spacing:-0.02em}
+.stat-label{font-size:0.73rem;font-weight:600;color:var(--text3);margin-top:4px;text-transform:uppercase;letter-spacing:0.12em}
+.stat-div{width:1px;height:40px;background:var(--border)}
+
+/* ─── SECTION HEADERS ─── */
+.s-eyebrow{display:inline-flex;align-items:center;gap:8px;font-family:var(--font-c);font-size:10.5px;font-weight:700;color:var(--blue2);text-transform:uppercase;letter-spacing:0.18em;margin-bottom:14px}
+.s-eyebrow::before{content:'';width:16px;height:2px;background:var(--blue2);border-radius:2px}
+h2.s-title{font-family:var(--font-c);font-size:clamp(2.2rem,5vw,3.4rem);font-weight:900;letter-spacing:-0.02em;text-transform:uppercase;line-height:0.95;margin-bottom:14px}
+.s-desc{color:var(--text2);font-size:0.97rem;max-width:480px;line-height:1.85;font-weight:400}
+
+/* ─── TOOLS GRID ─── */
+#osint{background:linear-gradient(180deg,transparent,rgba(59,126,255,0.015) 50%,transparent)}
+.tools-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:52px}
+@media(max-width:900px){.tools-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.tools-grid{grid-template-columns:1fr}}
+.tool-card{position:relative;padding:24px;border-radius:14px;background:var(--surface);border:1px solid var(--border);backdrop-filter:blur(20px);cursor:pointer;transition:all 0.25s;overflow:hidden;color:inherit;display:block}
+.tool-card::before{content:'';position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(59,126,255,0.07) 0%,transparent 55%);opacity:0;transition:opacity 0.3s}
+.tool-card:hover{transform:translateY(-3px);border-color:var(--border-h);box-shadow:0 20px 55px rgba(0,0,0,0.55),0 0 30px rgba(59,126,255,0.07)}
+.tool-card:hover::before{opacity:1}
+.tool-card.locked{cursor:default}
+.tool-card.locked:hover{transform:none;border-color:var(--border);box-shadow:none}
+.tool-icon{width:40px;height:40px;border-radius:9px;background:rgba(59,126,255,0.1);border:1px solid rgba(59,126,255,0.2);display:flex;align-items:center;justify-content:center;margin-bottom:16px;transition:all 0.25s}
+.tool-card:hover .tool-icon{background:rgba(59,126,255,0.18);border-color:rgba(111,168,255,0.4);box-shadow:0 0 16px rgba(59,126,255,0.18)}
+.tool-card.locked .tool-icon{background:rgba(40,50,75,0.15);border-color:rgba(40,50,75,0.25)}
+.tool-icon i{font-size:1.2rem;color:var(--blue2)}
+.tool-card.locked .tool-icon i{color:var(--text3)}
+.tool-name{font-family:var(--font-c);font-size:0.94rem;font-weight:800;margin-bottom:8px;color:var(--text);letter-spacing:0.04em;text-transform:uppercase}
+.tool-card.locked .tool-name{color:var(--text3)}
+.tool-desc{font-size:0.81rem;color:var(--text2);line-height:1.72;font-weight:400}
+.tool-card.locked .tool-desc{color:var(--text3)}
+.tool-tag{display:inline-flex;align-items:center;gap:5px;margin-top:14px;padding:3px 10px;border-radius:99px;font-size:0.69rem;font-family:var(--font-c);font-weight:700;letter-spacing:0.08em;text-transform:uppercase}
+.tool-tag.blue{background:rgba(59,126,255,0.1);border:1px solid rgba(59,126,255,0.25);color:var(--blue2)}
+.tool-tag.red{background:rgba(255,71,87,0.08);border:1px solid rgba(255,71,87,0.2);color:var(--red)}
+.tool-tag.purple{background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);color:var(--purple)}
+.tool-tag.amber{background:rgba(255,184,48,0.08);border:1px solid rgba(255,184,48,0.2);color:var(--amber)}
+.tool-tag.gray{background:rgba(40,50,75,0.12);border:1px solid rgba(40,50,75,0.28);color:var(--text3)}
+.tool-lock-overlay{position:absolute;inset:0;border-radius:inherit;background:rgba(3,3,10,0.6);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.lock-badge{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 20px;border-radius:10px;background:rgba(7,7,18,0.95);border:1px solid var(--border)}
+.lock-badge i{font-size:1.4rem;color:var(--text3)}
+.lock-badge span{font-family:var(--font-c);font-size:0.7rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em}
+
+/* ─── VOIP SECTION ─── */
+#voip{border-top:1px solid var(--border)}
+.voip-layout{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;margin-top:52px}
+@media(max-width:800px){.voip-layout{grid-template-columns:1fr}}
+.voip-features{display:flex;flex-direction:column;gap:16px;margin-top:28px}
+.vf{display:flex;align-items:flex-start;gap:14px}
+.vf-ico{width:32px;height:32px;border-radius:8px;background:rgba(59,126,255,0.1);border:1px solid rgba(59,126,255,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.vf-ico i{font-size:0.95rem;color:var(--blue2)}
+.vf-title{font-family:var(--font-c);font-size:0.9rem;font-weight:800;color:var(--text);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.04em}
+.vf-desc{font-size:0.8rem;color:var(--text2);line-height:1.65}
+
+/* ─── DIALER CARD ─── */
+.dialer-card{background:var(--surface2);border:1px solid var(--border);border-radius:18px;padding:26px;backdrop-filter:blur(24px);position:relative;overflow:hidden}
+.dialer-card::before{content:'';position:absolute;top:-20%;right:-10%;width:300px;height:300px;background:radial-gradient(circle,rgba(59,126,255,0.04) 0%,transparent 70%);filter:blur(40px)}
+.dialer-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.dialer-title{font-family:var(--font-c);font-size:0.94rem;font-weight:800;color:var(--blue2);letter-spacing:0.06em;text-transform:uppercase}
+.dialer-status{display:flex;align-items:center;gap:5px;font-size:0.7rem;color:var(--text2)}
+.sdot{width:5px;height:5px;border-radius:50%;background:var(--blue2);box-shadow:0 0 6px var(--blue2);animation:pulse 2s infinite}
+.dialer-display{background:rgba(0,0,0,0.35);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;font-family:var(--mono);font-size:1.6rem;font-weight:700;color:var(--text);letter-spacing:0.1em;text-align:right;min-height:58px;display:flex;align-items:center;justify-content:flex-end;transition:all 0.15s}
+.dialer-display.calling{color:var(--blue2);border-color:rgba(59,126,255,0.4);box-shadow:0 0 20px rgba(59,126,255,0.1);animation:blinkBorder 1s infinite}
+.dialer-display.connected{color:#4ade80;border-color:rgba(74,222,128,0.4);box-shadow:0 0 20px rgba(74,222,128,0.1)}
+.dgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.dbtn{padding:13px;border-radius:9px;background:rgba(255,255,255,0.03);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:1rem;font-weight:700;cursor:pointer;transition:all 0.15s;text-align:center;user-select:none}
+.dbtn:hover{background:rgba(59,126,255,0.1);border-color:rgba(111,168,255,0.3);color:var(--blue2);transform:scale(0.97)}
+.dbtn:active{transform:scale(0.94)}
+.dbtn.call{background:rgba(59,126,255,0.12);border-color:rgba(59,126,255,0.35);color:var(--blue2)}
+.dbtn.call:hover{background:rgba(59,126,255,0.22);box-shadow:0 0 20px rgba(59,126,255,0.18)}
+.dbtn.end{background:rgba(255,71,87,0.1);border-color:rgba(255,71,87,0.28);color:var(--red)}
+.dbtn.end:hover{background:rgba(255,71,87,0.2)}
+.dsub{font-size:0.55rem;color:var(--text3);display:block;margin-top:2px;font-weight:600;letter-spacing:0.08em;font-family:var(--font-c)}
+.call-timer{text-align:center;font-family:var(--mono);font-size:0.85rem;color:var(--blue2);margin-bottom:12px;min-height:20px;letter-spacing:0.1em}
+.recent-calls{margin-top:16px;border-top:1px solid var(--border);padding-top:14px}
+.rc-title{font-size:0.67rem;font-family:var(--font-c);font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.14em;margin-bottom:10px}
+.call-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(45,65,110,0.1)}
+.call-row:last-child{border-bottom:none}
+.ci{display:flex;align-items:center;gap:9px}
+.ci-ico{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:0.78rem}
+.ci-ico.out{background:rgba(59,126,255,0.1);color:var(--blue2)}
+.ci-ico.miss{background:rgba(255,71,87,0.1);color:var(--red)}
+.ci-name{font-size:0.78rem;font-weight:600;color:var(--text);font-family:var(--mono)}
+.ci-time{font-size:0.68rem;color:var(--text3);font-family:var(--font-c)}
+.ci-dur{font-size:0.68rem;color:var(--text3);font-family:var(--font-c)}
+
+/* ─── VOIP LOCKED OVERLAY ─── */
+.voip-locked{position:relative}
+.voip-lock-overlay{position:absolute;inset:-10px;border-radius:22px;background:rgba(3,3,10,0.75);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);z-index:10}
+.voip-lock-box{text-align:center;padding:24px 32px;background:var(--surface3);border:1px solid var(--border);border-radius:14px}
+.voip-lock-box i{font-size:2.4rem;color:var(--blue2);display:block;margin-bottom:12px}
+.voip-lock-box h4{font-family:var(--font-c);font-size:1.1rem;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px}
+.voip-lock-box p{font-size:0.82rem;color:var(--text2);margin-bottom:16px;line-height:1.6}
+
+/* ─── PRICING ─── */
+#pricing{border-top:1px solid var(--border);text-align:center}
+.pricing-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;max-width:820px;margin:52px auto 0}
+@media(max-width:640px){.pricing-grid{grid-template-columns:1fr}}
+.price-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:34px;backdrop-filter:blur(20px);text-align:left;transition:all 0.28s;position:relative;overflow:hidden}
+.price-card.featured{border-color:rgba(59,126,255,0.42);background:rgba(10,10,24,0.92)}
+.price-card.featured::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--blue),transparent)}
+.price-badge{display:inline-flex;padding:4px 12px;border-radius:99px;font-size:0.68rem;font-family:var(--font-c);font-weight:700;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:18px}
+.price-badge.w{background:rgba(59,126,255,0.1);border:1px solid rgba(59,126,255,0.25);color:var(--blue2)}
+.price-badge.m{background:rgba(59,126,255,0.15);border:1px solid rgba(111,168,255,0.3);color:var(--blue3)}
+.price-name{font-family:var(--font-c);font-size:0.95rem;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px}
+.price-amount{font-family:var(--font-c);font-size:3.2rem;font-weight:900;color:var(--text);letter-spacing:-0.04em;line-height:1;margin-bottom:4px}
+.price-amount span{font-size:1.1rem;color:var(--text2);font-weight:500}
+.price-period{font-size:0.77rem;color:var(--text3);margin-bottom:26px}
+.price-div{height:1px;background:var(--border);margin-bottom:22px}
+.price-features{list-style:none;display:flex;flex-direction:column;gap:11px;margin-bottom:30px}
+.price-features li{display:flex;align-items:center;gap:9px;font-size:0.84rem;color:var(--text2);font-weight:400}
+.price-features li i{color:var(--blue2);font-size:0.88rem;flex-shrink:0}
+.price-features li.no{color:var(--text3)}
+.price-features li.no i{color:var(--text3)}
+.price-btn{width:100%;padding:13px;border-radius:9px;font-size:0.87rem;font-weight:700;cursor:pointer;transition:all 0.2s;font-family:var(--font);border:none;letter-spacing:0.03em;text-transform:uppercase}
+.price-btn.primary{background:var(--blue);color:#fff}
+.price-btn.primary:hover{background:#2a68ee;transform:translateY(-1px);box-shadow:0 10px 28px rgba(59,126,255,0.32)}
+.price-btn.outline{background:transparent;color:var(--blue2);border:1px solid rgba(59,126,255,0.3)}
+.price-btn.outline:hover{background:rgba(59,126,255,0.08);border-color:rgba(111,168,255,0.5)}
+.crypto-accept{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:26px;flex-wrap:wrap}
+.crypto-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 13px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--border);font-size:0.75rem;font-family:var(--font-c);font-weight:700;color:var(--text2);letter-spacing:0.05em}
+.btcc{color:#F7931A}.ethc{color:#627EEA}.ltcc{color:var(--blue2)}.xmrc{color:#FF6600}
+
+/* ─── FOOTER ─── */
+footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:38px 36px 30px;display:flex;flex-direction:column;align-items:center;gap:14px}
+.footer-links{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center}
+.footer-link{font-size:0.8rem;color:var(--text3);text-decoration:none;padding:4px 10px;border-radius:6px;transition:color 0.2s;font-weight:500}
+.footer-link:hover{color:var(--blue2)}
+.footer-copy{font-size:0.76rem;color:var(--text3)}
+.footer-meta{font-size:0.73rem;color:var(--text3);opacity:0.6;text-align:center}
+
+/* ─── MODAL ─── */
+.modal-overlay{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,0.78);backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity 0.25s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:#060612;border:1px solid rgba(70,100,160,0.4);border-radius:18px;padding:38px;max-width:500px;width:100%;position:relative;transform:translateY(18px);transition:transform 0.3s cubic-bezier(0.4,0,0.2,1)}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal-close{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.85rem;transition:all 0.2s}
+.modal-close:hover{background:rgba(255,255,255,0.06);color:var(--text)}
+.modal h3{font-family:var(--font-c);font-size:1.5rem;font-weight:900;color:var(--text);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px}
+.modal-sub{font-size:0.82rem;color:var(--text2);margin-bottom:24px}
+.auth-tabs{display:flex;gap:4px;margin-bottom:24px;background:rgba(255,255,255,0.03);border-radius:10px;padding:4px}
+.auth-tab{flex:1;padding:8px;border-radius:7px;border:none;background:transparent;font-family:var(--font-c);font-size:0.88rem;font-weight:700;color:var(--text2);cursor:pointer;transition:all 0.2s;text-transform:uppercase;letter-spacing:0.04em}
+.auth-tab.active{background:var(--blue);color:#fff}
+.auth-form{display:flex;flex-direction:column;gap:12px}
+.auth-input{padding:12px 14px;border-radius:9px;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:0.88rem;outline:none;transition:all 0.2s}
+.auth-input:focus{border-color:var(--border-h);background:rgba(59,126,255,0.06);box-shadow:0 0 0 3px rgba(59,126,255,0.1)}
+.auth-input::placeholder{color:var(--text3)}
+.auth-error{font-size:0.8rem;color:var(--red);display:none;padding:8px 12px;background:rgba(255,71,87,0.08);border:1px solid rgba(255,71,87,0.2);border-radius:7px}
+.auth-error.show{display:block}
+.auth-submit{padding:13px;border-radius:9px;background:var(--blue);color:#fff;font-size:0.88rem;font-weight:700;cursor:pointer;border:none;font-family:var(--font);transition:all 0.2s;letter-spacing:0.02em;text-transform:uppercase}
+.auth-submit:hover{background:#2a68ee;transform:translateY(-1px);box-shadow:0 8px 24px rgba(59,126,255,0.3)}
+.auth-divider{text-align:center;font-size:0.78rem;color:var(--text3);margin:2px 0}
+.btn-guest{padding:11px;border-radius:9px;background:transparent;color:var(--text2);font-size:0.83rem;font-weight:600;cursor:pointer;border:1px solid var(--border);font-family:var(--font);transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-guest:hover{border-color:var(--border-h);color:var(--blue2)}
+.pay-methods{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px}
+.pay-m{padding:12px 8px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid var(--border);cursor:pointer;text-align:center;transition:all 0.2s}
+.pay-m:hover{border-color:rgba(59,126,255,0.3)}
+.pay-m.selected{border-color:var(--blue);background:rgba(59,126,255,0.1)}
+.pay-m-ico{font-size:1.2rem;font-weight:800;margin-bottom:4px}
+.pay-m-name{font-size:0.7rem;font-family:var(--font-c);font-weight:700;color:var(--text2);letter-spacing:0.04em}
+.crypto-box{background:rgba(0,0,0,0.35);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:18px}
+.c-label{font-size:0.68rem;font-family:var(--font-c);font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:6px}
+.c-amount{font-family:var(--mono);font-size:1.4rem;font-weight:700;color:var(--text);margin-bottom:2px}
+.c-usd{font-size:0.8rem;color:var(--text2);margin-bottom:14px}
+.c-addr{font-family:var(--mono);font-size:0.73rem;color:var(--blue2);word-break:break-all;cursor:pointer;padding:8px;background:rgba(59,126,255,0.06);border-radius:7px;transition:background 0.2s;border:1px solid rgba(59,126,255,0.15)}
+.c-addr:hover{background:rgba(59,126,255,0.12)}
+.c-warn{font-size:0.74rem;color:var(--amber);margin-top:10px;line-height:1.6}
+.modal-confirm{width:100%;padding:13px;border-radius:9px;background:var(--blue);color:#fff;font-size:0.88rem;font-weight:700;cursor:pointer;border:none;font-family:var(--font);transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:7px;text-transform:uppercase;letter-spacing:0.03em}
+.modal-confirm:hover{background:#2a68ee}
+
+/* ─── TOAST ─── */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);z-index:9999;background:rgba(10,10,22,0.98);border:1px solid var(--border);border-radius:10px;padding:11px 20px;display:flex;align-items:center;gap:10px;font-size:0.83rem;color:var(--text);pointer-events:none;transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);white-space:nowrap;box-shadow:0 10px 40px rgba(0,0,0,0.6)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* ─── ADMIN LAYOUT ─── */
+.admin-layout{display:flex;min-height:100vh;padding-top:62px}
+.admin-sidebar{width:220px;flex-shrink:0;background:rgba(5,5,14,0.98);border-right:1px solid var(--border);padding:24px 0;position:fixed;top:62px;left:0;bottom:0;overflow-y:auto;z-index:100}
+.admin-logo{font-family:var(--font-c);font-size:1rem;font-weight:900;color:var(--text);padding:0 20px;letter-spacing:0.1em;text-transform:uppercase}
+.admin-logo-sub{font-size:0.68rem;color:var(--text3);padding:2px 20px 18px;font-weight:500;letter-spacing:0.05em;border-bottom:1px solid var(--border);margin-bottom:16px}
+.admin-nav-sec{font-size:0.64rem;font-family:var(--font-c);font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.14em;padding:10px 20px 5px}
+.admin-nav-item{display:flex;align-items:center;gap:9px;padding:9px 20px;cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text2);transition:all 0.18s;border-left:2px solid transparent}
+.admin-nav-item i{font-size:0.95rem}
+.admin-nav-item:hover{color:var(--text);background:rgba(59,126,255,0.05)}
+.admin-nav-item.active{color:var(--blue2);background:rgba(59,126,255,0.08);border-left-color:var(--blue2)}
+.admin-main{flex:1;margin-left:220px;padding:30px 32px;min-height:calc(100vh - 62px)}
+.admin-section{display:none}
+.admin-section.active{display:block}
+.admin-section-title{font-family:var(--font-c);font-size:1.7rem;font-weight:900;color:var(--text);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px}
+.admin-section-sub{font-size:0.83rem;color:var(--text2);margin-bottom:28px;line-height:1.6}
+
+/* ─── KPI CARDS ─── */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+@media(max-width:900px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;backdrop-filter:blur(20px)}
+.kpi-label{font-size:0.7rem;font-family:var(--font-c);font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:10px}
+.kpi-value{font-family:var(--font-c);font-size:1.85rem;font-weight:900;color:var(--text);letter-spacing:-0.02em;margin-bottom:6px}
+.kpi-change{font-size:0.73rem;font-weight:600}
+.kpi-change.up{color:var(--blue2)}
+.kpi-change.neutral{color:var(--text3)}
+.kpi-change.down{color:var(--red)}
+
+/* ─── CHARTS ─── */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:6px}
+@media(max-width:800px){.charts-grid{grid-template-columns:1fr}}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;backdrop-filter:blur(20px)}
+.chart-card-title{font-family:var(--font-c);font-size:0.88rem;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:3px}
+.chart-card-sub{font-size:0.73rem;color:var(--text3);margin-bottom:18px}
+.bar-chart{display:flex;align-items:flex-end;gap:8px;height:100px}
+.bar-item{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+.bar-val{font-size:0.6rem;color:var(--text3);font-family:var(--font-c);font-weight:700}
+.bar-fill{background:var(--blue);border-radius:3px 3px 0 0;width:100%;transition:height 0.5s ease;opacity:0.8}
+.bar-fill.blue2{background:var(--blue2)}
+.bar-label{font-size:0.62rem;color:var(--text3);font-family:var(--font-c);font-weight:600}
+
+/* ─── ADMIN TABLES ─── */
+.admin-table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-top:16px}
+.admin-table-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--border)}
+.admin-table-title{font-family:var(--font-c);font-size:0.88rem;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:0.04em}
+.admin-table-sub{font-size:0.72rem;color:var(--text3);margin-top:2px}
+.admin-search{padding:8px 14px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:0.82rem;outline:none;transition:all 0.2s;min-width:200px}
+.admin-search:focus{border-color:var(--border-h);background:rgba(59,126,255,0.06)}
+.admin-search::placeholder{color:var(--text3)}
+.atbl{width:100%;border-collapse:collapse}
+.atbl th{padding:10px 22px;text-align:left;font-size:0.7rem;font-family:var(--font-c);font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;border-bottom:1px solid var(--border)}
+.atbl td{padding:12px 22px;font-size:0.82rem;color:var(--text2);border-bottom:1px solid rgba(45,65,110,0.12)}
+.atbl tr:last-child td{border-bottom:none}
+.atbl tr:hover td{background:rgba(59,126,255,0.03)}
+.plan-badge{display:inline-flex;padding:3px 9px;border-radius:6px;font-size:0.65rem;font-family:var(--font-c);font-weight:700;text-transform:uppercase;letter-spacing:0.08em}
+.plan-badge.week{background:rgba(59,126,255,0.1);color:var(--blue2);border:1px solid rgba(59,126,255,0.2)}
+.plan-badge.month{background:rgba(111,168,255,0.1);color:var(--blue3);border:1px solid rgba(111,168,255,0.2)}
+.plan-badge.lifetime{background:rgba(167,139,250,0.1);color:var(--purple);border:1px solid rgba(167,139,250,0.2)}
+.plan-badge.none{background:rgba(40,50,75,0.15);color:var(--text3);border:1px solid rgba(40,50,75,0.25)}
+.status-badge{display:inline-flex;padding:3px 9px;border-radius:6px;font-size:0.65rem;font-family:var(--font-c);font-weight:700;text-transform:uppercase;letter-spacing:0.08em}
+.status-badge.active{background:rgba(59,126,255,0.1);color:var(--blue2);border:1px solid rgba(59,126,255,0.2)}
+.status-badge.admin{background:rgba(167,139,250,0.12);color:var(--purple);border:1px solid rgba(167,139,250,0.25)}
+.status-badge.trial{background:rgba(255,184,48,0.1);color:var(--amber);border:1px solid rgba(255,184,48,0.2)}
+.status-badge.guest{background:rgba(40,50,75,0.15);color:var(--text3);border:1px solid rgba(40,50,75,0.25)}
+
+/* ─── ACTIVITY FEED ─── */
+.activity-feed{padding:8px 0}
+.activity-item{display:flex;align-items:flex-start;gap:13px;padding:12px 22px;border-bottom:1px solid rgba(45,65,110,0.1);transition:background 0.18s}
+.activity-item:hover{background:rgba(59,126,255,0.03)}
+.activity-item:last-child{border-bottom:none}
+.activity-ico{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0;margin-top:1px}
+.activity-ico.login{background:rgba(59,126,255,0.1);color:var(--blue2)}
+.activity-ico.tool{background:rgba(111,168,255,0.1);color:var(--blue2)}
+.activity-ico.pay{background:rgba(255,184,48,0.1);color:var(--amber)}
+.activity-ico.voip{background:rgba(59,126,255,0.1);color:var(--blue2)}
+.activity-ico.warn{background:rgba(255,71,87,0.1);color:var(--red)}
+.activity-main{font-size:0.82rem;color:var(--text2);line-height:1.5}
+.activity-main strong{color:var(--text);font-weight:700}
+.activity-meta{font-size:0.72rem;color:var(--text3);margin-top:2px;font-family:var(--font-c)}
+
+/* ─── TOOL USAGE BARS ─── */
+.tool-usage-list{display:flex;flex-direction:column;gap:12px}
+.tool-usage-row{display:flex;align-items:center;gap:14px}
+.tool-usage-name{font-size:0.8rem;color:var(--text2);font-weight:600;width:130px;flex-shrink:0}
+.tool-usage-bar-wrap{flex:1;height:6px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden}
+.tool-usage-bar{height:100%;border-radius:3px;transition:width 0.8s ease}
+.tool-usage-val{font-family:var(--mono);font-size:0.78rem;color:var(--text3);width:50px;text-align:right;flex-shrink:0}
+
+/* ─── SETTINGS ─── */
+.settings-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.settings-title{font-family:var(--font-c);font-size:0.82rem;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;padding:14px 22px;border-bottom:1px solid var(--border)}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;border-bottom:1px solid rgba(45,65,110,0.12)}
+.settings-row:last-child{border-bottom:none}
+.settings-label{font-size:0.84rem;font-weight:600;color:var(--text);margin-bottom:2px}
+.settings-desc{font-size:0.74rem;color:var(--text3)}
+.toggle{position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:rgba(40,50,75,0.4);border-radius:11px;transition:0.3s;border:1px solid var(--border)}
+.toggle-slider::before{content:'';position:absolute;height:15px;width:15px;left:3px;bottom:3px;background:var(--text3);border-radius:50%;transition:0.3s}
+.toggle input:checked+.toggle-slider{background:var(--blue);border-color:var(--blue)}
+.toggle input:checked+.toggle-slider::before{transform:translateX(18px);background:#fff}
+
+/* ─── USER DASHBOARD ─── */
+.dash-header{background:rgba(5,5,14,0.9);border-bottom:1px solid var(--border);padding:28px 36px 24px;position:sticky;top:62px;z-index:50;backdrop-filter:blur(20px)}
+.dash-welcome{font-family:var(--font-c);font-size:1.4rem;font-weight:900;color:var(--text);text-transform:uppercase;letter-spacing:0.04em}
+.dash-welcome span{color:var(--blue2)}
+.dash-sub{font-size:0.8rem;color:var(--text2);margin-top:2px}
+.dash-inner{max-width:1100px;margin:0 auto;padding:28px 36px}
+.preview-banner{display:flex;align-items:center;gap:12px;padding:14px 18px;background:rgba(59,126,255,0.06);border:1px solid rgba(59,126,255,0.2);border-radius:10px;margin-bottom:24px;flex-wrap:wrap}
+.preview-banner i{color:var(--blue2);font-size:1.1rem;flex-shrink:0}
+.preview-banner span{font-size:0.82rem;color:var(--text2);flex:1}
+.preview-banner button{padding:7px 16px;border-radius:7px;background:var(--blue);color:#fff;border:none;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);text-transform:uppercase;letter-spacing:0.03em}
+.dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px}
+@media(max-width:900px){.dash-grid{grid-template-columns:repeat(2,1fr)}}
+.dash-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;backdrop-filter:blur(20px)}
+.dash-card-label{font-size:0.7rem;font-family:var(--font-c);font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:10px}
+.dash-card-val{font-family:var(--font-c);font-size:1.8rem;font-weight:900;color:var(--text);letter-spacing:-0.02em}
+.dash-card-val.blue{color:var(--blue2)}
+.dash-card-val.amber{color:var(--amber)}
+
+/* ─── DASH VoIP DIALER ─── */
+.dash-voip-section{margin-top:28px}
+.dash-voip-title{font-family:var(--font-c);font-size:0.88rem;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:14px}
+.dash-voip-grid{display:grid;grid-template-columns:360px 1fr;gap:22px;align-items:start}
+@media(max-width:900px){.dash-voip-grid{grid-template-columns:1fr}}
+
+/* ─── DASH TOOLS ─── */
+.dash-tools-section{margin-bottom:28px}
+.dash-tools-title{font-family:var(--font-c);font-size:0.88rem;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:14px}
+.dash-tools-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:900px){.dash-tools-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.dash-tools-grid{grid-template-columns:1fr}}
+.dash-tool-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;cursor:pointer;transition:all 0.22s;position:relative;overflow:hidden}
+.dash-tool-card:hover{transform:translateY(-2px);border-color:var(--border-h);box-shadow:0 12px 36px rgba(0,0,0,0.4)}
+.dash-tool-card.locked{cursor:default;opacity:0.6}
+.dash-tool-card.locked:hover{transform:none;border-color:var(--border);box-shadow:none}
+.dash-tool-ico{width:34px;height:34px;border-radius:8px;background:rgba(59,126,255,0.1);border:1px solid rgba(59,126,255,0.18);display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.dash-tool-ico i{font-size:1rem;color:var(--blue2)}
+.dash-tool-name{font-family:var(--font-c);font-size:0.84rem;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px}
+.dash-tool-desc{font-size:0.75rem;color:var(--text2);line-height:1.6}
+.dash-lock{position:absolute;top:14px;right:14px;font-size:0.85rem;color:var(--text3)}
+
+/* ─── CALL LOG TABLE ─── */
+.call-log-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.call-log-title{font-family:var(--font-c);font-size:0.82rem;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;padding:14px 20px;border-bottom:1px solid var(--border)}
+.call-log-empty{padding:24px 20px;font-size:0.82rem;color:var(--text3);text-align:center;font-family:var(--font-c)}
+
+/* ─── KEYS MANAGEMENT ─── */
+.key-generate-form{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:16px}
+.key-form-title{font-family:var(--font-c);font-size:0.88rem;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:16px}
+.key-form-row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.key-form-group{display:flex;flex-direction:column;gap:5px}
+.key-form-label{font-size:0.68rem;font-family:var(--font-c);font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em}
+.key-form-select,.key-form-input{padding:9px 13px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:0.83rem;outline:none;transition:all 0.2s}
+.key-form-select:focus,.key-form-input:focus{border-color:var(--border-h)}
+.key-form-select option{background:#060612}
+.key-gen-btn{padding:9px 20px;border-radius:8px;background:var(--blue);color:#fff;border:none;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:var(--font);text-transform:uppercase;letter-spacing:0.03em;transition:all 0.2s;white-space:nowrap}
+.key-gen-btn:hover{background:#2a68ee}
+
+/* ─── ADMIN USERS ACTIONS ─── */
+.user-action-btn{padding:5px 11px;border-radius:6px;font-size:0.7rem;font-weight:700;cursor:pointer;border:none;font-family:var(--font-c);text-transform:uppercase;letter-spacing:0.06em;transition:all 0.2s}
+.user-action-btn.ban{background:rgba(255,71,87,0.1);color:var(--red);border:1px solid rgba(255,71,87,0.2)}
+.user-action-btn.ban:hover{background:rgba(255,71,87,0.2)}
+.user-action-btn.grant{background:rgba(59,126,255,0.1);color:var(--blue2);border:1px solid rgba(59,126,255,0.2)}
+.user-action-btn.grant:hover{background:rgba(59,126,255,0.2)}
+
+/* ─── ANIMATIONS ─── */
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 6px currentColor}50%{opacity:0.5;box-shadow:0 0 12px currentColor}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes blinkBorder{0%,100%{box-shadow:0 0 0 0 rgba(59,126,255,0.3)}50%{box-shadow:0 0 0 4px rgba(59,126,255,0.1)}}
+@keyframes callRing{0%,100%{transform:scale(1)}50%{transform:scale(1.02)}}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div class="bg-scene"><div class="bg-grid"></div></div>
+<div class="bg-vignette"></div>
+
+<!-- ─── NAV ─── -->
+<nav>
+  <a class="nav-logo" href="#" onclick="showLanding();return false">
+    <span class="nav-brand">BK<span>AMT</span>.xyz</span>
+  </a>
+  <div class="nav-links" id="nav-links">
+    <button class="nav-link" onclick="scrollTo2('osint')">Tools</button>
+    <button class="nav-link" onclick="scrollTo2('voip')">VoIP</button>
+    <button class="nav-link" onclick="scrollTo2('pricing')">Pricing</button>
+  </div>
+  <div class="nav-actions">
+    <div id="nav-actions-guest">
+      <button class="nav-btn-login" onclick="openAuthModal('login')">Login</button>
+      <button class="nav-btn-cta" onclick="openAuthModal('register')">Get Access</button>
+    </div>
+    <div id="nav-actions-user" class="hidden" style="display:flex;align-items:center;gap:10px">
+      <div class="nav-user-badge" onclick="goToDashboard()">
+        <div class="nav-avatar" id="nav-avatar">V</div>
+        <span class="nav-username" id="nav-username">Viac</span>
+      </div>
+      <button class="nav-logout" onclick="logout()">Logout</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════ LANDING PAGE ═══════════ -->
+<div id="landing-page" class="page">
+
+<!-- HERO -->
+<section id="hero">
+  <div class="container">
+    <div class="hero-badge"><span class="hero-badge-dot"></span> Live Platform — 860 TB Data</div>
+    <h1 class="hero-title">Precision<br><span class="accent-b">Intelligence</span><br>Infrastructure</h1>
+    <p class="hero-sub">Advanced OSINT tools and encrypted VoIP communications for professional investigators and security researchers.</p>
+    <div class="hero-btns">
+      <button class="btn-primary" onclick="openAuthModal('register')"><i class="ph ph-rocket-launch"></i> Get Started</button>
+      <button class="btn-secondary" onclick="scrollTo2('osint')"><i class="ph ph-magnifying-glass"></i> Browse Tools</button>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-num">860TB</div><div class="stat-label">Data Archive</div></div>
+      <div class="stat-div"></div>
+      <div class="stat"><div class="stat-num">47</div><div class="stat-label">Live APIs</div></div>
+      <div class="stat-div"></div>
+      <div class="stat"><div class="stat-num">9</div><div class="stat-label">OSINT Tools</div></div>
+      <div class="stat-div"></div>
+      <div class="stat"><div class="stat-num">E2E</div><div class="stat-label">Encrypted VoIP</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- OSINT TOOLS -->
+<section id="osint">
+  <div class="container">
+    <div class="s-eyebrow">Intelligence Tools</div>
+    <h2 class="s-title">OSINT<br>Arsenal</h2>
+    <p class="s-desc">Professional-grade lookup tools powered by 47 live APIs and 860 terabytes of indexed data.</p>
+    <div class="tools-grid" id="tools-grid"><!-- filled by JS --></div>
+  </div>
+</section>
+
+<!-- VOIP -->
+<section id="voip">
+  <div class="container">
+    <div class="voip-layout">
+      <div>
+        <div class="s-eyebrow">Encrypted Calling</div>
+        <h2 class="s-title">VoIP<br>Communications</h2>
+        <p class="s-desc">Place fully encrypted calls from any device. No logs, no traces — professional-grade anonymity.</p>
+        <div class="voip-features">
+          <div class="vf">
+            <div class="vf-ico"><i class="ph ph-lock-key"></i></div>
+            <div><div class="vf-title">End-to-End Encrypted</div><div class="vf-desc">All calls are encrypted with military-grade protocols. No metadata stored.</div></div>
+          </div>
+          <div class="vf">
+            <div class="vf-ico"><i class="ph ph-phone-outgoing"></i></div>
+            <div><div class="vf-title">Global PSTN Access</div><div class="vf-desc">Call any landline or mobile worldwide. Custom caller ID spoofing available.</div></div>
+          </div>
+          <div class="vf">
+            <div class="vf-ico"><i class="ph ph-shield-check"></i></div>
+            <div><div class="vf-title">Zero-Log Policy</div><div class="vf-desc">Call metadata purged every 24 hours. No content ever recorded.</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="voip-locked" id="landing-dialer-wrap">
+        <div class="voip-lock-overlay" id="voip-lock-overlay">
+          <div class="voip-lock-box">
+            <i class="ph ph-lock"></i>
+            <h4>Subscription Required</h4>
+            <p>VoIP calling is available on Weekly and Monthly plans.</p>
+            <button class="btn-primary" onclick="openModal('week')"><i class="ph ph-rocket-launch"></i> Subscribe Now</button>
+          </div>
+        </div>
+        <!-- Dialer Preview -->
+        <div class="dialer-card">
+          <div class="dialer-header">
+            <div class="dialer-title">Encrypted Dialer</div>
+            <div class="dialer-status"><div class="sdot"></div>Ready</div>
+          </div>
+          <div class="dialer-display" id="landing-dial-display">_</div>
+          <div class="dgrid">
+            <button class="dbtn" onclick="ldPress('1')">1<span class="dsub"></span></button>
+            <button class="dbtn" onclick="ldPress('2')">2<span class="dsub">ABC</span></button>
+            <button class="dbtn" onclick="ldPress('3')">3<span class="dsub">DEF</span></button>
+            <button class="dbtn" onclick="ldPress('4')">4<span class="dsub">GHI</span></button>
+            <button class="dbtn" onclick="ldPress('5')">5<span class="dsub">JKL</span></button>
+            <button class="dbtn" onclick="ldPress('6')">6<span class="dsub">MNO</span></button>
+            <button class="dbtn" onclick="ldPress('7')">7<span class="dsub">PQRS</span></button>
+            <button class="dbtn" onclick="ldPress('8')">8<span class="dsub">TUV</span></button>
+            <button class="dbtn" onclick="ldPress('9')">9<span class="dsub">WXYZ</span></button>
+            <button class="dbtn" onclick="ldPress('*')">*</button>
+            <button class="dbtn" onclick="ldPress('0')">0<span class="dsub">+</span></button>
+            <button class="dbtn" onclick="ldPress('#')">#</button>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <button class="dbtn end" onclick="ldDel()"><i class="ph ph-backspace"></i></button>
+            <button class="dbtn call"><i class="ph ph-phone-call"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing">
+  <div class="container">
+    <div class="s-eyebrow">Access Plans</div>
+    <h2 class="s-title">Simple<br>Pricing</h2>
+    <p class="s-desc" style="margin:0 auto">No trials, no surprises. Pay anonymously with crypto — access granted within 15 minutes.</p>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <span class="price-badge w">Weekly</span>
+        <div class="price-name">Weekly Access</div>
+        <div class="price-amount">$39<span>.99</span></div>
+        <div class="price-period">per week · 7 days</div>
+        <div class="price-div"></div>
+        <ul class="price-features">
+          <li><i class="ph ph-check-circle"></i>All 9 OSINT tools unlocked</li>
+          <li><i class="ph ph-check-circle"></i>100 VoIP minutes included</li>
+          <li><i class="ph ph-check-circle"></i>Encrypted calling globally</li>
+          <li><i class="ph ph-check-circle"></i>Real-time API access</li>
+          <li class="no"><i class="ph ph-x-circle"></i>Priority data refresh</li>
+        </ul>
+        <button class="price-btn outline" onclick="openModal('week')">Get Weekly Access</button>
+      </div>
+      <div class="price-card featured">
+        <span class="price-badge m">Monthly</span>
+        <div class="price-name">Monthly Access</div>
+        <div class="price-amount">$69<span>.99</span></div>
+        <div class="price-period">per month · 30 days</div>
+        <div class="price-div"></div>
+        <ul class="price-features">
+          <li><i class="ph ph-check-circle"></i>All 9 OSINT tools unlocked</li>
+          <li><i class="ph ph-check-circle"></i>500 VoIP minutes included</li>
+          <li><i class="ph ph-check-circle"></i>Encrypted calling globally</li>
+          <li><i class="ph ph-check-circle"></i>Real-time API access</li>
+          <li><i class="ph ph-check-circle"></i>Priority data refresh</li>
+        </ul>
+        <button class="price-btn primary" onclick="openModal('month')">Get Monthly Access</button>
+      </div>
+    </div>
+    <div class="crypto-accept" style="margin-top:28px">
+      <span style="font-size:0.75rem;color:var(--text3);font-weight:600">Accepted:</span>
+      <div class="crypto-badge"><span class="btcc">₿</span> Bitcoin</div>
+      <div class="crypto-badge"><span class="ethc">Ξ</span> Ethereum</div>
+      <div class="crypto-badge"><span class="ltcc">Ł</span> Litecoin</div>
+      <div class="crypto-badge"><span class="xmrc">ɱ</span> Monero</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-links">
+    <a class="footer-link" href="#">Terms</a>
+    <a class="footer-link" href="#">Privacy</a>
+    <a class="footer-link" href="#">Acceptable Use</a>
+    <a class="footer-link" href="https://discord.gg/bkamt" target="_blank">Discord</a>
+    <a class="footer-link" href="#">Tor Mirror</a>
+  </div>
+  <div class="footer-copy">© 2026 Bkamt.xyz. All rights reserved.</div>
+  <div class="footer-meta">For lawful research and investigation use only.</div>
+</footer>
+
+</div><!-- /landing-page -->
+
+<!-- ═══════════ ADMIN PAGE ═══════════ -->
+<div id="admin-page" class="page hidden">
+  <div class="admin-layout">
+    <div class="admin-sidebar">
+      <div class="admin-logo">Bkamt.xyz</div>
+      <div class="admin-logo-sub">Admin Control Panel</div>
+      <div class="admin-nav-sec">Overview</div>
+      <div class="admin-nav-item active" onclick="adminNav('overview',this)"><i class="ph ph-chart-pie-slice"></i>Dashboard</div>
+      <div class="admin-nav-item" onclick="adminNav('activity',this)"><i class="ph ph-activity"></i>Activity Log</div>
+      <div class="admin-nav-sec">Users</div>
+      <div class="admin-nav-item" onclick="adminNav('users',this)"><i class="ph ph-users"></i>All Users</div>
+      <div class="admin-nav-item" onclick="adminNav('keys',this)"><i class="ph ph-key"></i>License Keys</div>
+      <div class="admin-nav-item" onclick="adminNav('subscriptions',this)"><i class="ph ph-crown"></i>Subscriptions</div>
+      <div class="admin-nav-sec">Platform</div>
+      <div class="admin-nav-item" onclick="adminNav('tools',this)"><i class="ph ph-wrench"></i>Tool Usage</div>
+      <div class="admin-nav-item" onclick="adminNav('voip-admin',this)"><i class="ph ph-phone"></i>VoIP Calls</div>
+      <div class="admin-nav-item" onclick="adminNav('payments',this)"><i class="ph ph-currency-btc"></i>Payments</div>
+      <div class="admin-nav-sec">Config</div>
+      <div class="admin-nav-item" onclick="adminNav('settings',this)"><i class="ph ph-gear"></i>Settings</div>
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+        <div class="admin-nav-item" onclick="showLanding()"><i class="ph ph-arrow-left"></i>Back to Site</div>
+        <div class="admin-nav-item" onclick="logout()"><i class="ph ph-sign-out"></i>Logout</div>
+      </div>
+    </div>
+    <div class="admin-main">
+
+      <!-- OVERVIEW -->
+      <div class="admin-section active" id="admin-overview">
+        <div class="admin-section-title">Dashboard</div>
+        <div class="admin-section-sub">Full platform overview — real-time stats and user activity.</div>
+        <div class="kpi-grid" id="admin-kpi-grid">
+          <div class="kpi-card"><div class="kpi-label">Total Users</div><div class="kpi-value" id="kpi-total-users">1</div><div class="kpi-change neutral">Registered accounts</div></div>
+          <div class="kpi-card"><div class="kpi-label">Active Subs</div><div class="kpi-value" id="kpi-active-subs">0</div><div class="kpi-change neutral">With valid plan</div></div>
+          <div class="kpi-card"><div class="kpi-label">License Keys</div><div class="kpi-value" id="kpi-keys">2</div><div class="kpi-change up">Active keys</div></div>
+          <div class="kpi-card"><div class="kpi-label">VoIP Minutes</div><div class="kpi-value">18,492</div><div class="kpi-change neutral">This month</div></div>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi-card"><div class="kpi-label">Tool Queries Today</div><div class="kpi-value">4,220</div><div class="kpi-change up">+15% vs yesterday</div></div>
+          <div class="kpi-card"><div class="kpi-label">Data Archive</div><div class="kpi-value">860TB</div><div class="kpi-change neutral">Indexed</div></div>
+          <div class="kpi-card"><div class="kpi-label">Live APIs</div><div class="kpi-value">47</div><div class="kpi-change up">All operational</div></div>
+          <div class="kpi-card"><div class="kpi-label">Uptime</div><div class="kpi-value">99.9%</div><div class="kpi-change up">All systems go</div></div>
+        </div>
+        <div class="charts-grid">
+          <div class="chart-card">
+            <div class="chart-card-title">New Users — Last 7 Days</div>
+            <div class="chart-card-sub">Daily registrations</div>
+            <div class="bar-chart">
+              <div class="bar-item"><div class="bar-val">42</div><div class="bar-fill" style="height:52%"></div><div class="bar-label">Mon</div></div>
+              <div class="bar-item"><div class="bar-val">58</div><div class="bar-fill" style="height:68%"></div><div class="bar-label">Tue</div></div>
+              <div class="bar-item"><div class="bar-val">35</div><div class="bar-fill" style="height:42%"></div><div class="bar-label">Wed</div></div>
+              <div class="bar-item"><div class="bar-val">71</div><div class="bar-fill" style="height:84%"></div><div class="bar-label">Thu</div></div>
+              <div class="bar-item"><div class="bar-val">64</div><div class="bar-fill" style="height:76%"></div><div class="bar-label">Fri</div></div>
+              <div class="bar-item"><div class="bar-val">89</div><div class="bar-fill" style="height:100%"></div><div class="bar-label">Sat</div></div>
+              <div class="bar-item"><div class="bar-val">52</div><div class="bar-fill" style="height:61%"></div><div class="bar-label">Sun</div></div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title">Revenue — Last 7 Days</div>
+            <div class="chart-card-sub">USD (crypto converted)</div>
+            <div class="bar-chart">
+              <div class="bar-item"><div class="bar-val">$1.2k</div><div class="bar-fill blue2" style="height:38%"></div><div class="bar-label">Mon</div></div>
+              <div class="bar-item"><div class="bar-val">$1.8k</div><div class="bar-fill blue2" style="height:55%"></div><div class="bar-label">Tue</div></div>
+              <div class="bar-item"><div class="bar-val">$0.9k</div><div class="bar-fill blue2" style="height:28%"></div><div class="bar-label">Wed</div></div>
+              <div class="bar-item"><div class="bar-val">$3.2k</div><div class="bar-fill blue2" style="height:100%"></div><div class="bar-label">Thu</div></div>
+              <div class="bar-item"><div class="bar-val">$2.7k</div><div class="bar-fill blue2" style="height:84%"></div><div class="bar-label">Fri</div></div>
+              <div class="bar-item"><div class="bar-val">$2.1k</div><div class="bar-fill blue2" style="height:65%"></div><div class="bar-label">Sat</div></div>
+              <div class="bar-item"><div class="bar-val">$1.6k</div><div class="bar-fill blue2" style="height:50%"></div><div class="bar-label">Sun</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACTIVITY LOG -->
+      <div class="admin-section" id="admin-activity">
+        <div class="admin-section-title">Activity Log</div>
+        <div class="admin-section-sub">Every login, tool use, call, and payment — real-time.</div>
+        <div class="admin-table-wrap">
+          <div class="admin-table-header">
+            <div><div class="admin-table-title">Live Activity</div><div class="admin-table-sub" id="activity-count">Last 50 events</div></div>
+          </div>
+          <div class="activity-feed" id="activity-feed">
+            <div class="activity-item"><div class="activity-ico login"><i class="ph ph-sign-in"></i></div><div class="activity-text"><div class="activity-main"><strong>user_k8x22</strong> logged in from 94.212.x.x (Berlin, DE)</div><div class="activity-meta">2 min ago · Firefox · Windows 11</div></div></div>
+            <div class="activity-item"><div class="activity-ico tool"><i class="ph ph-magnifying-glass"></i></div><div class="activity-text"><div class="activity-main"><strong>user_m3f91</strong> ran Phone Lookup — +49 171 ***</div><div class="activity-meta">5 min ago · Monthly Plan · 18min session</div></div></div>
+            <div class="activity-item"><div class="activity-ico pay"><i class="ph ph-currency-btc"></i></div><div class="activity-text"><div class="activity-main"><strong>user_r9p55</strong> payment confirmed — Weekly $39.99 in BTC</div><div class="activity-meta">12 min ago · 2 confirmations</div></div></div>
+            <div class="activity-item"><div class="activity-ico voip"><i class="ph ph-phone"></i></div><div class="activity-text"><div class="activity-main"><strong>user_j7w14</strong> VoIP call — 8m · +44 7xxx — +1 555 xxx</div><div class="activity-meta">18 min ago · E2E Encrypted · EU-US route</div></div></div>
+            <div class="activity-item"><div class="activity-ico tool"><i class="ph ph-user-circle"></i></div><div class="activity-text"><div class="activity-main"><strong>user_n2d07</strong> ran Username Lookup — john_doe_2024</div><div class="activity-meta">22 min ago · 500+ platforms · 14 hits</div></div></div>
+            <div class="activity-item"><div class="activity-ico warn"><i class="ph ph-warning"></i></div><div class="activity-text"><div class="activity-main"><strong>guest_visitor</strong> attempted tool use without account — blocked</div><div class="activity-meta">25 min ago · IP: 185.220.x.x (TOR exit)</div></div></div>
+            <div class="activity-item"><div class="activity-ico login"><i class="ph ph-user-plus"></i></div><div class="activity-text"><div class="activity-main"><strong>new_user_t4k88</strong> registered — free account</div><div class="activity-meta">31 min ago · Direct referral</div></div></div>
+            <div class="activity-item"><div class="activity-ico tool"><i class="ph ph-envelope"></i></div><div class="activity-text"><div class="activity-main"><strong>user_h6c33</strong> ran Email Intelligence — test@***.com</div><div class="activity-meta">38 min ago · 3 breaches found · Weekly Plan</div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ALL USERS -->
+      <div class="admin-section" id="admin-users">
+        <div class="admin-section-title">All Users</div>
+        <div class="admin-section-sub">Complete user registry — accounts, plans, and activity.</div>
+        <div class="admin-table-wrap">
+          <div class="admin-table-header">
+            <div><div class="admin-table-title">User Registry</div><div class="admin-table-sub" id="users-count">Loading...</div></div>
+            <input class="admin-search" placeholder="Search users..." oninput="filterTable(this,'users-table')">
+          </div>
+          <table class="atbl" id="users-table">
+            <thead><tr><th>ID</th><th>Username</th><th>Role</th><th>Plan</th><th>Expires</th><th>Queries</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- LICENSE KEYS -->
+      <div class="admin-section" id="admin-keys">
+        <div class="admin-section-title">License Keys</div>
+        <div class="admin-section-sub">Generate and manage access keys for users.</div>
+        <div class="key-generate-form">
+          <div class="key-form-title">Generate New Key</div>
+          <div class="key-form-row">
+            <div class="key-form-group">
+              <label class="key-form-label">Plan Type</label>
+              <select class="key-form-select" id="key-type">
+                <option value="week">Weekly (7 days)</option>
+                <option value="month">Monthly (30 days)</option>
+              </select>
+            </div>
+            <div class="key-form-group">
+              <label class="key-form-label">VoIP Minutes</label>
+              <input class="key-form-input" type="number" id="key-minutes" value="100" min="0" max="9999" style="width:120px">
+            </div>
+            <div class="key-form-group">
+              <label class="key-form-label">Note</label>
+              <input class="key-form-input" type="text" id="key-note" placeholder="Optional note" style="width:200px">
+            </div>
+            <button class="key-gen-btn" onclick="generateKey()"><i class="ph ph-plus"></i> Generate Key</button>
+          </div>
+        </div>
+        <div class="admin-table-wrap">
+          <div class="admin-table-header">
+            <div><div class="admin-table-title">All Keys</div><div class="admin-table-sub" id="keys-count">Loading...</div></div>
+            <input class="admin-search" placeholder="Search keys..." oninput="filterTable(this,'keys-table')">
+          </div>
+          <table class="atbl" id="keys-table">
+            <thead><tr><th>Key</th><th>Type</th><th>VoIP Min</th><th>Created By</th><th>Used By</th><th>Status</th><th>Note</th></tr></thead>
+            <tbody id="keys-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SUBSCRIPTIONS -->
+      <div class="admin-section" id="admin-subscriptions">
+        <div class="admin-section-title">Subscriptions</div>
+        <div class="admin-section-sub">Active, expired, and pending subscription records.</div>
+        <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+          <div class="kpi-card"><div class="kpi-label">Active Weekly</div><div class="kpi-value">189</div><div class="kpi-change up">+14 this week</div></div>
+          <div class="kpi-card"><div class="kpi-label">Active Monthly</div><div class="kpi-value">158</div><div class="kpi-change up">+6 this week</div></div>
+          <div class="kpi-card"><div class="kpi-label">Expired (30d)</div><div class="kpi-value">412</div><div class="kpi-change neutral">38% conversion</div></div>
+        </div>
+        <div class="admin-table-wrap">
+          <div class="admin-table-header"><div><div class="admin-table-title">Subscription Records</div><div class="admin-table-sub">All plans</div></div></div>
+          <table class="atbl">
+            <thead><tr><th>User</th><th>Plan</th><th>Amount</th><th>Coin</th><th>Started</th><th>Expires</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td style="color:var(--blue2)">user_k8x22</td><td><span class="plan-badge week">Weekly</span></td><td>$39.99</td><td><span class="btcc">BTC</span></td><td>Mar 25, 2026</td><td>Apr 1, 2026</td><td><span class="status-badge active">Active</span></td></tr>
+              <tr><td style="color:var(--blue2)">user_m3f91</td><td><span class="plan-badge month">Monthly</span></td><td>$69.99</td><td><span class="ethc">ETH</span></td><td>Mar 10, 2026</td><td>Apr 10, 2026</td><td><span class="status-badge active">Active</span></td></tr>
+              <tr><td style="color:var(--blue2)">user_b1s72</td><td><span class="plan-badge month">Monthly</span></td><td>$69.99</td><td><span class="ethc">ETH</span></td><td>Mar 28, 2026</td><td>Apr 28, 2026</td><td><span class="status-badge active">Active</span></td></tr>
+              <tr><td style="color:var(--blue2)">user_r9p55</td><td><span class="plan-badge week">Weekly</span></td><td>$39.99</td><td><span class="btcc">BTC</span></td><td>Mar 28, 2026</td><td>Apr 4, 2026</td><td><span class="status-badge active">Active</span></td></tr>
+              <tr><td style="color:var(--text3)">user_old_44</td><td><span class="plan-badge none">Weekly</span></td><td>$39.99</td><td><span class="xmrc">XMR</span></td><td>Mar 8, 2026</td><td>Mar 15, 2026</td><td><span class="status-badge guest">Expired</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TOOL USAGE -->
+      <div class="admin-section" id="admin-tools">
+        <div class="admin-section-title">Tool Usage</div>
+        <div class="admin-section-sub">Which tools are most used and how often.</div>
+        <div class="chart-card" style="margin-bottom:16px">
+          <div class="chart-card-title">Top Tools — This Month</div>
+          <div class="chart-card-sub">Total queries per tool</div>
+          <div class="tool-usage-list" style="margin-top:12px">
+            <div class="tool-usage-row"><div class="tool-usage-name">Phone Lookup</div><div class="tool-usage-bar-wrap"><div class="tool-usage-bar" style="width:88%;background:var(--blue)"></div></div><div class="tool-usage-val">4,821</div></div>
+            <div class="tool-usage-row"><div class="tool-usage-name">Username Lookup</div><div class="tool-usage-bar-wrap"><div class="tool-usage-bar" style="width:74%;background:var(--blue)"></div></div><div class="tool-usage-val">4,082</div></div>
+            <div class="tool-usage-row"><div class="tool-usage-name">IP & Geolocation</div><div class="tool-usage-bar-wrap"><div class="tool-usage-bar" style="width:62%;background:var(--blue)"></div></div><div class="tool-usage-val">3,411</div></div>
+            <div class="tool-usage-row"><div class="tool-usage-name">Email Intel</div><div class="tool-usage-bar-wrap"><div class="tool-usage-bar" style="width:55%;background:var(--blue2)"></div></div><div class="tool-usage-val">3,024</div></div>
+            <div class="tool-usage-row"><div class="tool-usage-name">Breach Database</div><div class="tool-usage-bar-wrap"><div class="tool-usage-bar" style="width:48%;background:var(--blue2)"></div></div><div class="tool-usage-val">2,644</div></div>
+            <div class="tool-usage-row"><div class="tool-usage-name">Domain Recon</div><div class="tool-usage-bar-wrap"><div class="tool-usage-bar" style="width:38%;background:var(--blue3)"></div></div><div class="tool-usage-val">2,091</div></div>
+            <div class="tool-usage-row"><div class="tool-usage-name">Face Search</div><div class="tool-usage-bar-wrap"><div class="tool-usage-bar" style="width:28%;background:var(--purple)"></div></div><div class="tool-usage-val">1,540</div></div>
+            <div class="tool-usage-row"><div class="tool-usage-name">Vehicle & Plate</div><div class="tool-usage-bar-wrap"><div class="tool-usage-bar" style="width:20%;background:var(--amber)"></div></div><div class="tool-usage-val">1,101</div></div>
+            <div class="tool-usage-row"><div class="tool-usage-name">Company Intel</div><div class="tool-usage-bar-wrap"><div class="tool-usage-bar" style="width:15%;background:var(--red)"></div></div><div class="tool-usage-val">825</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VOIP ADMIN -->
+      <div class="admin-section" id="admin-voip-admin">
+        <div class="admin-section-title">VoIP Calls</div>
+        <div class="admin-section-sub">Call metadata — no content stored, fully encrypted end-to-end.</div>
+        <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+          <div class="kpi-card"><div class="kpi-label">Calls Today</div><div class="kpi-value" id="admin-calls-today">0</div><div class="kpi-change neutral">Avg 4.2 min</div></div>
+          <div class="kpi-card"><div class="kpi-label">Minutes Today</div><div class="kpi-value" id="admin-mins-today">0</div><div class="kpi-change neutral">Total used</div></div>
+          <div class="kpi-card"><div class="kpi-label">Active Lines</div><div class="kpi-value" id="admin-active-lines">0</div><div class="kpi-change neutral">Right now</div></div>
+        </div>
+        <div class="admin-table-wrap">
+          <div class="admin-table-header"><div><div class="admin-table-title">Call Records</div><div class="admin-table-sub">Metadata only — no audio</div></div></div>
+          <table class="atbl" id="voip-calls-table">
+            <thead><tr><th>User</th><th>From</th><th>To (masked)</th><th>Duration</th><th>Route</th><th>Time</th></tr></thead>
+            <tbody id="voip-calls-tbody">
+              <tr><td style="color:var(--blue2)">user_j7w14</td><td style="font-family:var(--mono);font-size:0.78rem">+44 7xxx ****</td><td style="font-family:var(--mono);font-size:0.78rem">+1 (555) ****</td><td>8m 12s</td><td>EU-US</td><td>18 min ago</td></tr>
+              <tr><td style="color:var(--blue2)">user_m3f91</td><td style="font-family:var(--mono);font-size:0.78rem">+49 151 ****</td><td style="font-family:var(--mono);font-size:0.78rem">+39 xxx ****</td><td>2m 44s</td><td>EU-EU</td><td>34 min ago</td></tr>
+              <tr><td style="color:var(--blue2)">user_h6c33</td><td style="font-family:var(--mono);font-size:0.78rem">+43 xxx ****</td><td style="font-family:var(--mono);font-size:0.78rem">+49 xxx ****</td><td>12m 01s</td><td>EU-EU</td><td>1h ago</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PAYMENTS -->
+      <div class="admin-section" id="admin-payments">
+        <div class="admin-section-title">Payments</div>
+        <div class="admin-section-sub">All confirmed crypto transactions.</div>
+        <div class="kpi-grid">
+          <div class="kpi-card"><div class="kpi-label">Total Revenue</div><div class="kpi-value">$24,831</div><div class="kpi-change up">MTD</div></div>
+          <div class="kpi-card"><div class="kpi-label">BTC</div><div class="kpi-value">$11,204</div><div class="kpi-change neutral">45%</div></div>
+          <div class="kpi-card"><div class="kpi-label">ETH</div><div class="kpi-value">$8,912</div><div class="kpi-change neutral">36%</div></div>
+          <div class="kpi-card"><div class="kpi-label">XMR/LTC</div><div class="kpi-value">$4,715</div><div class="kpi-change neutral">19%</div></div>
+        </div>
+        <div class="admin-table-wrap">
+          <div class="admin-table-header"><div><div class="admin-table-title">Transaction Log</div></div></div>
+          <table class="atbl">
+            <thead><tr><th>User</th><th>Plan</th><th>Amount</th><th>Coin</th><th>TX Hash</th><th>Confirmed</th></tr></thead>
+            <tbody>
+              <tr><td style="color:var(--blue2)">user_r9p55</td><td><span class="plan-badge week">Weekly</span></td><td>$39.99</td><td><span class="btcc">BTC</span></td><td style="font-family:var(--mono);font-size:0.7rem;color:var(--text3)">bc1q...fgks</td><td style="color:var(--blue2)">12 min ago</td></tr>
+              <tr><td style="color:var(--blue2)">user_b1s72</td><td><span class="plan-badge month">Monthly</span></td><td>$69.99</td><td><span class="ethc">ETH</span></td><td style="font-family:var(--mono);font-size:0.7rem;color:var(--text3)">0x71C7...976F</td><td style="color:var(--blue2)">45 min ago</td></tr>
+              <tr><td style="color:var(--blue2)">user_h6c33</td><td><span class="plan-badge week">Weekly</span></td><td>$39.99</td><td><span class="ltcc">LTC</span></td><td style="font-family:var(--mono);font-size:0.7rem;color:var(--text3)">LT6p...ikz</td><td style="color:var(--blue2)">2h ago</td></tr>
+              <tr><td style="color:var(--blue2)">user_n2d07</td><td><span class="plan-badge month">Monthly</span></td><td>$69.99</td><td><span class="xmrc">XMR</span></td><td style="font-family:var(--mono);font-size:0.7rem;color:var(--text3)">43Yj...5Wy</td><td style="color:var(--blue2)">4h ago</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="admin-section" id="admin-settings">
+        <div class="admin-section-title">Settings</div>
+        <div class="admin-section-sub">Platform configuration and feature toggles.</div>
+        <div class="settings-card">
+          <div class="settings-title">Access Control</div>
+          <div class="settings-row"><div><div class="settings-label">Require Account for OSINT</div><div class="settings-desc">Block tool use for guests</div></div><label class="toggle"><input type="checkbox" id="s-require-osint" checked><span class="toggle-slider"></span></label></div>
+          <div class="settings-row"><div><div class="settings-label">Require Subscription for VoIP</div><div class="settings-desc">Block dialer for non-paying users</div></div><label class="toggle"><input type="checkbox" id="s-require-voip" checked><span class="toggle-slider"></span></label></div>
+          <div class="settings-row"><div><div class="settings-label">Preview Mode for Free Users</div><div class="settings-desc">Allow 3 free queries before requiring payment</div></div><label class="toggle"><input type="checkbox" id="s-preview-mode" checked><span class="toggle-slider"></span></label></div>
+          <div class="settings-row"><div><div class="settings-label">Guest Browsing</div><div class="settings-desc">Allow site visit without login</div></div><label class="toggle"><input type="checkbox" id="s-guest" checked><span class="toggle-slider"></span></label></div>
+        </div>
+        <div class="settings-card">
+          <div class="settings-title">Payments</div>
+          <div class="settings-row"><div><div class="settings-label">Accept Bitcoin</div></div><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+          <div class="settings-row"><div><div class="settings-label">Accept Ethereum</div></div><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+          <div class="settings-row"><div><div class="settings-label">Accept Litecoin</div></div><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+          <div class="settings-row"><div><div class="settings-label">Accept Monero</div></div><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+        </div>
+        <div class="settings-card">
+          <div class="settings-title">VoIP</div>
+          <div class="settings-row"><div><div class="settings-label">VoIP Service Active</div><div class="settings-desc">Enable/disable calling globally</div></div><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+          <div class="settings-row"><div><div class="settings-label">Call Logging (metadata only)</div><div class="settings-desc">Log call metadata, never audio</div></div><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+          <div class="settings-row"><div><div class="settings-label">Max Call Duration (min)</div><div class="settings-desc">Auto-cut after limit</div></div><span style="font-family:var(--mono);color:var(--blue2);font-weight:700">20</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ USER DASHBOARD ═══════════ -->
+<div id="dashboard-page" class="page hidden">
+  <div class="dash-header">
+    <div class="dash-welcome">Welcome back, <span id="dash-username">User</span></div>
+    <div class="dash-sub">Your OSINT & VoIP dashboard</div>
+  </div>
+  <div class="dash-inner">
+    <div id="dash-preview-banner" class="preview-banner" style="display:none">
+      <i class="ph ph-warning-circle"></i>
+      <span>You are on a <strong>Free Preview</strong> — <span id="preview-count">3</span> queries remaining. Subscribe for full access.</span>
+      <button onclick="openModal('week')">Upgrade</button>
+    </div>
+    <div class="dash-grid">
+      <div class="dash-card"><div class="dash-card-label">Queries Used</div><div class="dash-card-val" id="dash-queries">0</div></div>
+      <div class="dash-card"><div class="dash-card-label">Account Status</div><div class="dash-card-val blue" id="dash-status">Free</div></div>
+      <div class="dash-card"><div class="dash-card-label">VoIP Minutes</div><div class="dash-card-val amber" id="dash-minutes">—</div></div>
+      <div class="dash-card"><div class="dash-card-label">Plan Expires</div><div class="dash-card-val" id="dash-expires">—</div></div>
+    </div>
+
+    <!-- VoIP DIALER in dashboard -->
+    <div class="dash-voip-section">
+      <div class="dash-voip-title">VoIP Encrypted Dialer</div>
+      <div class="dash-voip-grid">
+        <div class="voip-locked" id="dash-dialer-wrap">
+          <div class="voip-lock-overlay" id="dash-voip-lock" style="display:none">
+            <div class="voip-lock-box">
+              <i class="ph ph-lock"></i>
+              <h4>Subscription Required</h4>
+              <p>Subscribe to access the encrypted VoIP dialer.</p>
+              <button class="btn-primary" onclick="openModal('week')"><i class="ph ph-rocket-launch"></i> Subscribe</button>
+            </div>
+          </div>
+          <div class="dialer-card">
+            <div class="dialer-header">
+              <div class="dialer-title">Encrypted Dialer</div>
+              <div class="dialer-status"><div class="sdot" id="dash-sdot"></div><span id="dash-call-status">Ready</span></div>
+            </div>
+            <div class="dialer-display" id="dash-dial-display">_</div>
+            <div class="call-timer" id="dash-call-timer"></div>
+            <div class="dgrid">
+              <button class="dbtn" onclick="dashPress('1')">1<span class="dsub"></span></button>
+              <button class="dbtn" onclick="dashPress('2')">2<span class="dsub">ABC</span></button>
+              <button class="dbtn" onclick="dashPress('3')">3<span class="dsub">DEF</span></button>
+              <button class="dbtn" onclick="dashPress('4')">4<span class="dsub">GHI</span></button>
+              <button class="dbtn" onclick="dashPress('5')">5<span class="dsub">JKL</span></button>
+              <button class="dbtn" onclick="dashPress('6')">6<span class="dsub">MNO</span></button>
+              <button class="dbtn" onclick="dashPress('7')">7<span class="dsub">PQRS</span></button>
+              <button class="dbtn" onclick="dashPress('8')">8<span class="dsub">TUV</span></button>
+              <button class="dbtn" onclick="dashPress('9')">9<span class="dsub">WXYZ</span></button>
+              <button class="dbtn" onclick="dashPress('*')">*</button>
+              <button class="dbtn" onclick="dashPress('0')">0<span class="dsub">+</span></button>
+              <button class="dbtn" onclick="dashPress('#')">#</button>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+              <button class="dbtn end" onclick="dashDel()"><i class="ph ph-backspace"></i></button>
+              <button class="dbtn call" id="dash-call-btn" onclick="dashCall()"><i class="ph ph-phone-call"></i></button>
+              <button class="dbtn end" id="dash-end-btn" onclick="dashEnd()" style="display:none"><i class="ph ph-phone-disconnect"></i></button>
+            </div>
+            <div class="recent-calls" id="dash-recent-calls">
+              <div class="rc-title">Recent Calls</div>
+              <div id="dash-call-log"><div style="font-size:0.76rem;color:var(--text3);padding:8px 0">No calls yet</div></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px">
+            <div style="font-family:var(--font-c);font-size:0.78rem;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:14px">Connection Info</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+                <span style="font-size:0.8rem;color:var(--text2)">Encryption</span>
+                <span style="font-size:0.8rem;font-weight:700;color:var(--blue2);font-family:var(--mono)">SRTP / TLS</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+                <span style="font-size:0.8rem;color:var(--text2)">Protocol</span>
+                <span style="font-size:0.8rem;font-weight:700;color:var(--blue2);font-family:var(--mono)">SIP / MicroSIP</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+                <span style="font-size:0.8rem;color:var(--text2)">Minutes Left</span>
+                <span style="font-size:0.8rem;font-weight:700;color:var(--amber);font-family:var(--mono)" id="dash-mins-left">—</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:10px 0">
+                <span style="font-size:0.8rem;color:var(--text2)">Call Logging</span>
+                <span style="font-size:0.8rem;font-weight:700;color:var(--text3);font-family:var(--mono)">Metadata Only</span>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:12px;background:var(--surface);border:1px solid rgba(59,126,255,0.2);border-radius:12px;padding:16px">
+            <div style="font-size:0.75rem;color:var(--blue2);font-weight:700;font-family:var(--font-c);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px">MicroSIP Config</div>
+            <div style="font-family:var(--mono);font-size:0.7rem;color:var(--text3);line-height:1.9">
+              <div>Server: <span style="color:var(--blue2)">sip.bkamt.xyz</span></div>
+              <div>Port: <span style="color:var(--blue2)">5060 / TLS 5061</span></div>
+              <div>Transport: <span style="color:var(--blue2)">TLS+SRTP</span></div>
+              <div>Username: <span style="color:var(--blue2)" id="dash-sip-user">—</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-tools-section" style="margin-top:24px">
+      <div class="dash-tools-title">OSINT Tools</div>
+      <div class="dash-tools-grid" id="dash-tools-grid"><!-- filled by JS --></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ MODALS ═══════════ -->
+
+<!-- AUTH MODAL -->
+<div class="modal-overlay" id="auth-modal" onclick="closeAuthOutside(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeAuthModal()"><i class="ph ph-x"></i></button>
+    <h3>Access Bkamt.xyz</h3>
+    <div class="modal-sub">Intelligence platform — lawful use only</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Login</button>
+      <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Register</button>
+    </div>
+    <div id="auth-login-form" class="auth-form">
+      <input class="auth-input" id="login-user" type="text" placeholder="Username" autocomplete="off">
+      <input class="auth-input" id="login-pass" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()">
+      <div class="auth-error" id="login-error">Invalid username or password.</div>
+      <button class="auth-submit" onclick="doLogin()">Login</button>
+      <div class="auth-divider">— or —</div>
+      <button class="btn-guest" onclick="continueAsGuest()"><i class="ph ph-eye"></i> Continue as Guest (view only)</button>
+    </div>
+    <div id="auth-register-form" class="auth-form hidden">
+      <input class="auth-input" id="reg-user" type="text" placeholder="Choose username" autocomplete="off">
+      <input class="auth-input" id="reg-email" type="email" placeholder="Email address">
+      <input class="auth-input" id="reg-pass" type="password" placeholder="Password (min 8 chars)">
+      <div class="auth-error" id="reg-error">Please fill in all fields.</div>
+      <button class="auth-submit" onclick="doRegister()">Create Account</button>
+      <div class="auth-divider">— or —</div>
+      <button class="btn-guest" onclick="continueAsGuest()"><i class="ph ph-eye"></i> Continue as Guest (view only)</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHECKOUT MODAL -->
+<div class="modal-overlay" id="checkout-modal" onclick="closeCheckoutOutside(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeCheckout()"><i class="ph ph-x"></i></button>
+    <h3 id="checkout-title">Weekly Access</h3>
+    <div class="modal-sub">Select your payment method</div>
+    <div class="pay-methods">
+      <div class="pay-m selected" onclick="selectCoin(this,'btc')"><div class="pay-m-ico btcc">₿</div><div class="pay-m-name">Bitcoin</div></div>
+      <div class="pay-m" onclick="selectCoin(this,'eth')"><div class="pay-m-ico ethc">Ξ</div><div class="pay-m-name">Ethereum</div></div>
+      <div class="pay-m" onclick="selectCoin(this,'ltc')"><div class="pay-m-ico ltcc">Ł</div><div class="pay-m-name">Litecoin</div></div>
+      <div class="pay-m" onclick="selectCoin(this,'xmr')"><div class="pay-m-ico xmrc">ɱ</div><div class="pay-m-name">Monero</div></div>
+    </div>
+    <div class="crypto-box">
+      <div class="c-label">Send Exactly</div>
+      <div class="c-amount" id="c-amount">0.000412 BTC</div>
+      <div class="c-usd" id="c-usd">approx. $39.99 USD</div>
+      <div style="height:12px"></div>
+      <div class="c-label">To Address</div>
+      <div class="c-addr" id="c-addr" onclick="copyAddr()">bc1qdmhhlr8k4wak73vx0tf9xd3jux79su2s6yfgks</div>
+      <div class="c-warn">Send only the exact amount. Access granted within 15 minutes after confirmation.</div>
+    </div>
+    <button class="modal-confirm" onclick="copyAddr()"><i class="ph ph-copy"></i> Copy Address</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><i class="ph ph-check-circle" style="color:var(--blue2);font-size:1.1rem"></i><span id="toast-msg">Done!</span></div>
+
+<!-- ═══════════ JAVASCRIPT ═══════════ -->
+<script>
+// ═══════════ DATABASE (mirrors database.json + keys.json) ═══════════
+const DB = {
+  users: [
+    {
+      id:'usr_001',username:'Viac',password:'root',role:'admin',
+      plan:'lifetime',expires:'9999-12-31',voip_minutes:99999,
+      queries:0,created:'2026-01-01T00:00:00.000Z',
+      last_login:null,active:true,note:'Platform Owner'
+    }
+  ],
+  keys: [
+    {key:'BKAMT-DEMO1-WEEK-2026-ABCD',type:'week',days:7,voip_minutes:100,
+     created_by:'Viac',created_at:'2026-03-28T00:00:00.000Z',
+     used_by:null,used_at:null,active:true,note:'Demo weekly key'},
+    {key:'BKAMT-DEMO2-MONT-2026-EFGH',type:'month',days:30,voip_minutes:500,
+     created_by:'Viac',created_at:'2026-03-28T00:00:00.000Z',
+     used_by:null,used_at:null,active:true,note:'Demo monthly key'}
+  ],
+  audit_logs: [],
+  voip_calls: [],
+  settings: {
+    require_account_osint:true,require_sub_voip:true,
+    preview_mode:true,guest_browsing:true,
+    voip_active:true,call_logging:true,voip_max_call_minutes:20
+  }
+};
+
+// ═══════════ TOOLS DATA ═══════════
+const TOOLS = [
+  {id:'username',name:'Username Lookup',desc:'Search usernames across 500+ platforms. Find linked accounts and digital footprints.',icon:'ph-user-circle',tag:'Active',tagClass:'blue',locked:false},
+  {id:'phone',name:'Phone Lookup',desc:'Reverse phone lookups, carrier detection, VoIP identification and geolocation.',icon:'ph-phone',tag:'Active',tagClass:'blue',locked:false},
+  {id:'email',name:'Email Intelligence',desc:'Breach lookups, email-to-identity correlation, header analysis and provider fingerprinting.',icon:'ph-envelope',tag:'Beta',tagClass:'amber',locked:false},
+  {id:'ip',name:'IP & Geolocation',desc:'Deep IP intelligence: ASN lookups, VPN/proxy/TOR detection, threat scoring and geolocation.',icon:'ph-map-pin',tag:'Active',tagClass:'blue',locked:false},
+  {id:'face',name:'Face Search',desc:'Reverse image and facial recognition across public databases and social media.',icon:'ph-camera',tag:'Premium',tagClass:'purple',locked:true},
+  {id:'domain',name:'Domain Recon',desc:'WHOIS history, DNS enumeration, subdomain discovery and SSL certificate transparency.',icon:'ph-globe',tag:'Active',tagClass:'blue',locked:false},
+  {id:'breach',name:'Breach Database',desc:'Query billions of leaked credentials from thousands of data breaches.',icon:'ph-shield-warning',tag:'Sensitive',tagClass:'red',locked:true},
+  {id:'vehicle',name:'Vehicle & Plate',desc:'License plate lookups, VIN decoding, registration history across regions.',icon:'ph-car',tag:'Beta',tagClass:'amber',locked:true},
+  {id:'company',name:'Company Intel',desc:'Business registration lookup, corporate structure mapping and executive identification.',icon:'ph-buildings',tag:'Active',tagClass:'blue',locked:false},
+];
+
+const WALLETS = {
+  btc:{sym:'BTC',addr:'bc1qdmhhlr8k4wak73vx0tf9xd3jux79su2s6yfgks'},
+  eth:{sym:'ETH',addr:'0x71C7656EC7ab88b098defB751B7401B5f6d8976F'},
+  ltc:{sym:'LTC',addr:'LT6pHQ2puuS7t32SXAFr11rnZv6KnuDikz'},
+  xmr:{sym:'XMR',addr:'43YjBtbFqkuBMtTXy19MkZbUFjgGGkFSAGBkEeqMmDC3yLEzT4Ax9qPmYnGLRw7cCNHKbCzXt8k5oMoS3Gy5Wy'}
+};
+const PRICES = {
+  week:{usd:'39.99',btc:'0.000412',eth:'0.01148',ltc:'0.523',xmr:'0.218'},
+  month:{usd:'69.99',btc:'0.000724',eth:'0.02015',ltc:'0.918',xmr:'0.383'}
+};
+
+// ═══════════ STATE ═══════════
+let currentUser = null;
+let currentPlan = 'week';
+let selectedCoin = 'btc';
+let previewQueriesLeft = 3;
+
+// ═══════════ AUDIO ENGINE (MicroSIP simulation) ═══════════
+let audioCtx = null;
+let dialToneNodes = [];
+let ringInterval = null;
+let callTimer = null;
+let callSeconds = 0;
+let isCallActive = false;
+let dashDialNum = '';
+let callLog = [];
+
+function getAudioCtx(){
+  if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playDTMF(digit){
+  const freqs = {
+    '1':[697,1209],'2':[697,1336],'3':[697,1477],
+    '4':[770,1209],'5':[770,1336],'6':[770,1477],
+    '7':[852,1209],'8':[852,1336],'9':[852,1477],
+    '*':[941,1209],'0':[941,1336],'#':[941,1477]
+  };
+  const pair = freqs[digit];
+  if(!pair) return;
+  try {
+    const ctx = getAudioCtx();
+    const gainNode = ctx.createGain();
+    gainNode.gain.setValueAtTime(0.12, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.12);
+    gainNode.connect(ctx.destination);
+    pair.forEach(f=>{
+      const osc = ctx.createOscillator();
+      osc.frequency.value = f;
+      osc.type = 'sine';
+      osc.connect(gainNode);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime+0.12);
+    });
+  } catch(e){}
+}
+
+function playRingback(){
+  stopRingback();
+  try {
+    const ctx = getAudioCtx();
+    let playing = false;
+    const doRing = ()=>{
+      if(!isCallActive) return;
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+1.8);
+      gain.connect(ctx.destination);
+      [440,480].forEach(f=>{
+        const osc = ctx.createOscillator();
+        osc.frequency.value = f;
+        osc.type = 'sine';
+        osc.connect(gain);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime+2);
+      });
+    };
+    doRing();
+    ringInterval = setInterval(doRing, 4000);
+  } catch(e){}
+}
+
+function stopRingback(){
+  if(ringInterval){ clearInterval(ringInterval); ringInterval=null; }
+}
+
+function playConnectBeep(){
+  try{
+    const ctx = getAudioCtx();
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.1,ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.3);
+    gain.connect(ctx.destination);
+    const osc = ctx.createOscillator();
+    osc.frequency.value = 880;
+    osc.type = 'sine';
+    osc.connect(gain);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime+0.3);
+  }catch(e){}
+}
+
+function playDisconnectTone(){
+  try{
+    const ctx = getAudioCtx();
+    [0,0.35,0.7].forEach(offset=>{
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.1,ctx.currentTime+offset);
+      gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+offset+0.25);
+      gain.connect(ctx.destination);
+      const osc = ctx.createOscillator();
+      osc.frequency.value = 480;
+      osc.type = 'sine';
+      osc.connect(gain);
+      osc.start(ctx.currentTime+offset);
+      osc.stop(ctx.currentTime+offset+0.25);
+    });
+  }catch(e){}
+}
+
+// ═══════════ LANDING DIALER (preview — locked) ═══════════
+let landingDialNum = '';
+function ldPress(d){ landingDialNum+=d; document.getElementById('landing-dial-display').textContent = landingDialNum||'_'; }
+function ldDel(){ landingDialNum=landingDialNum.slice(0,-1); document.getElementById('landing-dial-display').textContent = landingDialNum||'_'; }
+
+// ═══════════ DASHBOARD DIALER ═══════════
+function hasSub(){
+  if(!currentUser) return false;
+  return currentUser.role==='admin'||currentUser.plan==='week'||currentUser.plan==='month'||currentUser.plan==='lifetime';
+}
+
+function dashPress(d){
+  if(!hasSub()){ showToast('Subscription required to use VoIP'); openModal('week'); return; }
+  if(isCallActive){ playDTMF(d); return; }
+  playDTMF(d);
+  dashDialNum += d;
+  document.getElementById('dash-dial-display').textContent = dashDialNum||'_';
+}
+
+function dashDel(){
+  if(isCallActive) return;
+  dashDialNum = dashDialNum.slice(0,-1);
+  document.getElementById('dash-dial-display').textContent = dashDialNum||'_';
+}
+
+function dashCall(){
+  if(!hasSub()){ showToast('Subscription required to make calls'); openModal('week'); return; }
+  if(!dashDialNum){ showToast('Enter a number first'); return; }
+  if(isCallActive) return;
+
+  isCallActive = true;
+  const disp = document.getElementById('dash-dial-display');
+  const statusEl = document.getElementById('dash-call-status');
+  const timerEl = document.getElementById('dash-call-timer');
+  const callBtn = document.getElementById('dash-call-btn');
+  const endBtn = document.getElementById('dash-end-btn');
+
+  disp.classList.add('calling');
+  statusEl.textContent = 'Calling...';
+  callBtn.style.display = 'none';
+  endBtn.style.display = '';
+
+  playRingback();
+
+  // Simulate connection after 2-4 seconds
+  const connectDelay = 2000 + Math.random()*2000;
+  setTimeout(()=>{
+    if(!isCallActive) return;
+    stopRingback();
+    playConnectBeep();
+    disp.classList.remove('calling');
+    disp.classList.add('connected');
+    statusEl.textContent = 'Connected';
+    callSeconds = 0;
+    callTimer = setInterval(()=>{
+      callSeconds++;
+      const m = Math.floor(callSeconds/60);
+      const s = callSeconds%60;
+      timerEl.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      // Deduct minutes from user (each 60s = 1 minute)
+      if(callSeconds%60===0 && currentUser){
+        currentUser.voip_minutes = Math.max(0,(currentUser.voip_minutes||0)-1);
+        document.getElementById('dash-mins-left').textContent = currentUser.voip_minutes;
+        document.getElementById('dash-minutes').textContent = currentUser.voip_minutes;
+        updateDashStats();
+      }
+      // Auto-cut at max
+      const maxSecs = DB.settings.voip_max_call_minutes * 60;
+      if(callSeconds >= maxSecs) dashEnd();
+    },1000);
+  }, connectDelay);
+}
+
+function dashEnd(){
+  if(!isCallActive && !dashDialNum) return;
+  const number = dashDialNum;
+  const disp = document.getElementById('dash-dial-display');
+  const statusEl = document.getElementById('dash-call-status');
+  const timerEl = document.getElementById('dash-call-timer');
+  const callBtn = document.getElementById('dash-call-btn');
+  const endBtn = document.getElementById('dash-end-btn');
+
+  stopRingback();
+  if(callTimer){ clearInterval(callTimer); callTimer=null; }
+
+  if(isCallActive){
+    playDisconnectTone();
+    const dur = callSeconds;
+    const m = Math.floor(dur/60), s = dur%60;
+    const durStr = dur>0?`${m}m ${String(s).padStart(2,'0')}s`:'0s';
+
+    // Log the call
+    if(currentUser && number){
+      const logEntry = {
+        number: number.replace(/(\d{4})$/, '****'),
+        duration: durStr,
+        time: 'Just now'
+      };
+      callLog.unshift(logEntry);
+      if(callLog.length > 5) callLog.pop();
+      renderCallLog();
+
+      // Add to admin VoIP table
+      DB.voip_calls.push({
+        user: currentUser.username,
+        from: 'SIP/' + currentUser.username,
+        to: number.replace(/(\d{4})$/,'****'),
+        duration: durStr,
+        route: 'Local',
+        time: new Date().toISOString()
+      });
+      updateAdminVoipStats();
+    }
+    showToast('Call ended — ' + durStr);
+  }
+
+  isCallActive = false;
+  callSeconds = 0;
+  dashDialNum = '';
+  disp.textContent = '_';
+  disp.classList.remove('calling','connected');
+  statusEl.textContent = 'Ready';
+  timerEl.textContent = '';
+  callBtn.style.display = '';
+  endBtn.style.display = 'none';
+}
+
+function renderCallLog(){
+  const el = document.getElementById('dash-call-log');
+  if(callLog.length===0){ el.innerHTML='<div style="font-size:0.76rem;color:var(--text3);padding:8px 0">No calls yet</div>'; return; }
+  el.innerHTML = callLog.map(c=>`
+    <div class="call-row">
+      <div class="ci"><div class="ci-ico out"><i class="ph ph-phone-outgoing"></i></div><div class="ci-name">${c.number}</div></div>
+      <div style="display:flex;gap:12px"><span class="ci-dur">${c.duration}</span><span class="ci-time">${c.time}</span></div>
+    </div>
+  `).join('');
+}
+
+function updateAdminVoipStats(){
+  document.getElementById('admin-calls-today').textContent = DB.voip_calls.length;
+  const totalSecs = DB.voip_calls.reduce((a,c)=>{
+    const match = c.duration.match(/(\d+)m\s*(\d+)s/);
+    if(match) return a + parseInt(match[1])*60+parseInt(match[2]);
+    return a;
+  },0);
+  document.getElementById('admin-mins-today').textContent = Math.floor(totalSecs/60);
+  document.getElementById('admin-active-lines').textContent = isCallActive?'1':'0';
+
+  // Refresh voip tbody
+  const tbody = document.getElementById('voip-calls-tbody');
+  if(DB.voip_calls.length>0){
+    const rows = [...DB.voip_calls].reverse().slice(0,10).map(c=>`
+      <tr><td style="color:var(--blue2)">${c.user}</td>
+      <td style="font-family:var(--mono);font-size:0.78rem">SIP/${c.user}</td>
+      <td style="font-family:var(--mono);font-size:0.78rem">${c.to}</td>
+      <td>${c.duration}</td><td>Local</td><td>Just now</td></tr>
+    `).join('');
+    tbody.innerHTML = rows + tbody.innerHTML;
+  }
+}
+
+// ═══════════ TOOLS GRID ═══════════
+function renderToolsGrid(){
+  const g = document.getElementById('tools-grid');
+  const sub = hasSub();
+  g.innerHTML = TOOLS.map(t=>{
+    const locked = t.locked && !sub;
+    return `<div class="tool-card${locked?' locked':''}" onclick="handleToolClick('${t.id}',${locked})">
+      <div class="tool-icon"><i class="ph ${t.icon}"></i></div>
+      <div class="tool-name">${t.name}</div>
+      <div class="tool-desc">${t.desc}</div>
+      <span class="tool-tag ${t.tagClass}">${t.tag}</span>
+      ${locked?`<div class="tool-lock-overlay"><div class="lock-badge"><i class="ph ph-lock"></i><span>Subscription Required</span></div></div>`:''}
+    </div>`;
+  }).join('');
+
+  const dg = document.getElementById('dash-tools-grid');
+  if(dg){
+    dg.innerHTML = TOOLS.map(t=>{
+      const locked = !sub && t.locked;
+      return `<div class="dash-tool-card${locked?' locked':''}" onclick="handleToolClick('${t.id}',${locked})">
+        <div class="dash-tool-ico"><i class="ph ${t.icon}"></i></div>
+        <div class="dash-tool-name">${t.name}</div>
+        <div class="dash-tool-desc">${t.desc}</div>
+        ${locked?'<i class="ph ph-lock dash-lock"></i>':''}
+      </div>`;
+    }).join('');
+  }
+}
+
+function handleToolClick(toolId, locked){
+  if(!currentUser){ showToast('Login to use tools'); openAuthModal('login'); return; }
+  if(locked){ showToast('Subscribe to unlock this tool'); openModal('week'); return; }
+  if(!hasSub()){
+    if(previewQueriesLeft<=0){ showToast('Free preview limit reached'); openModal('week'); return; }
+    previewQueriesLeft--;
+    updatePreviewBanner();
+  }
+  currentUser.queries = (currentUser.queries||0)+1;
+  updateDashStats();
+  addAuditLog('tool', `<strong>${currentUser.username}</strong> ran ${toolId} lookup`);
+  showToast('Running ' + toolId + ' lookup...');
+}
+
+// ═══════════ AUTH ═══════════
+function openAuthModal(tab){
+  switchAuthTab(tab||'login');
+  document.getElementById('auth-modal').classList.add('open');
+}
+function closeAuthModal(){ document.getElementById('auth-modal').classList.remove('open'); }
+function closeAuthOutside(e){ if(e.target===document.getElementById('auth-modal')) closeAuthModal(); }
+function switchAuthTab(tab){
+  document.getElementById('tab-login').classList.toggle('active',tab==='login');
+  document.getElementById('tab-register').classList.toggle('active',tab==='register');
+  document.getElementById('auth-login-form').classList.toggle('hidden',tab!=='login');
+  document.getElementById('auth-register-form').classList.toggle('hidden',tab!=='register');
+}
+
+function doLogin(){
+  const u = document.getElementById('login-user').value.trim();
+  const p = document.getElementById('login-pass').value;
+  const err = document.getElementById('login-error');
+  const found = DB.users.find(x=>x.username.toLowerCase()===u.toLowerCase() && x.password===p);
+  if(!found){ err.classList.add('show'); return; }
+  err.classList.remove('show');
+  found.last_login = new Date().toISOString();
+  loginUser(found);
+  closeAuthModal();
+  addAuditLog('login', `<strong>${found.username}</strong> logged in`);
+  showToast('Welcome back, ' + found.username + '!');
+  if(found.role==='admin') showAdmin();
+  else goToDashboard();
+}
+
+function doRegister(){
+  const u = document.getElementById('reg-user').value.trim();
+  const e = document.getElementById('reg-email').value.trim();
+  const p = document.getElementById('reg-pass').value;
+  const err = document.getElementById('reg-error');
+  if(!u||!e||!p){ err.textContent='Please fill in all fields.'; err.classList.add('show'); return; }
+  if(p.length<8){ err.textContent='Password must be at least 8 characters.'; err.classList.add('show'); return; }
+  if(DB.users.find(x=>x.username.toLowerCase()===u.toLowerCase())){ err.textContent='Username already taken.'; err.classList.add('show'); return; }
+  err.classList.remove('show');
+  const newUser = {
+    id:'usr_'+Date.now(),username:u,password:p,role:'user',
+    plan:'none',expires:null,voip_minutes:0,queries:0,
+    created:new Date().toISOString(),active:true,note:''
+  };
+  DB.users.push(newUser);
+  loginUser(newUser);
+  closeAuthModal();
+  goToDashboard();
+  addAuditLog('login', `<strong>${u}</strong> registered — new account`);
+  showToast('Account created! Welcome, ' + u);
+  refreshAdminUsers();
+}
+
+function continueAsGuest(){
+  closeAuthModal();
+  showToast('Browsing as guest — login to use tools');
+}
+
+function loginUser(user){
+  currentUser = user;
+  document.getElementById('nav-actions-guest').classList.add('hidden');
+  document.getElementById('nav-actions-user').classList.remove('hidden');
+  document.getElementById('nav-username').textContent = user.username;
+  document.getElementById('nav-avatar').textContent = user.username[0].toUpperCase();
+  renderToolsGrid();
+  updateDashStats();
+}
+
+function logout(){
+  if(isCallActive) dashEnd();
+  currentUser = null;
+  previewQueriesLeft = 3;
+  document.getElementById('nav-actions-guest').classList.remove('hidden');
+  document.getElementById('nav-actions-user').classList.add('hidden');
+  showLanding();
+  renderToolsGrid();
+  showToast('Logged out');
+}
+
+// ═══════════ NAVIGATION ═══════════
+function showLanding(){
+  document.getElementById('landing-page').classList.remove('hidden');
+  document.getElementById('admin-page').classList.add('hidden');
+  document.getElementById('dashboard-page').classList.add('hidden');
+  document.getElementById('nav-links').style.display = '';
+}
+function showAdmin(){
+  document.getElementById('landing-page').classList.add('hidden');
+  document.getElementById('admin-page').classList.remove('hidden');
+  document.getElementById('dashboard-page').classList.add('hidden');
+  document.getElementById('nav-links').style.display = 'none';
+  refreshAdminUsers();
+  refreshAdminKeys();
+  refreshAdminKPIs();
+}
+function goToDashboard(){
+  if(!currentUser){ openAuthModal('login'); return; }
+  if(currentUser.role==='admin'){ showAdmin(); return; }
+  document.getElementById('landing-page').classList.add('hidden');
+  document.getElementById('admin-page').classList.add('hidden');
+  document.getElementById('dashboard-page').classList.remove('hidden');
+  document.getElementById('nav-links').style.display = 'none';
+  document.getElementById('dash-username').textContent = currentUser.username;
+  document.getElementById('dash-sip-user').textContent = currentUser.username.toLowerCase() + '@bkamt.xyz';
+  updateDashStats();
+  renderToolsGrid();
+}
+
+// ═══════════ DASHBOARD STATS ═══════════
+function updateDashStats(){
+  if(!currentUser) return;
+  const sub = hasSub();
+  document.getElementById('dash-queries').textContent = currentUser.queries||0;
+  let statusText = 'Free';
+  if(currentUser.role==='admin') statusText = 'Admin';
+  else if(currentUser.plan==='lifetime') statusText = 'Lifetime';
+  else if(currentUser.plan==='month') statusText = 'Monthly';
+  else if(currentUser.plan==='week') statusText = 'Weekly';
+  document.getElementById('dash-status').textContent = statusText;
+  document.getElementById('dash-minutes').textContent = sub ? (currentUser.voip_minutes||0) : '—';
+  document.getElementById('dash-expires').textContent = currentUser.expires||'—';
+  document.getElementById('dash-mins-left').textContent = sub ? (currentUser.voip_minutes||0) : '—';
+
+  // VoIP lock
+  const lock = document.getElementById('dash-voip-lock');
+  if(lock) lock.style.display = sub ? 'none' : 'flex';
+  // Landing dialer lock
+  const llock = document.getElementById('voip-lock-overlay');
+  if(llock) llock.style.display = sub ? 'none' : 'flex';
+
+  updatePreviewBanner();
+}
+
+function updatePreviewBanner(){
+  const b = document.getElementById('dash-preview-banner');
+  if(!b) return;
+  if(hasSub()){ b.style.display='none'; return; }
+  b.style.display = 'flex';
+  document.getElementById('preview-count').textContent = previewQueriesLeft;
+}
+
+// ═══════════ ADMIN NAVIGATION ═══════════
+function adminNav(section, el){
+  document.querySelectorAll('.admin-nav-item').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.admin-section').forEach(x=>x.classList.remove('active'));
+  document.getElementById('admin-'+section).classList.add('active');
+}
+
+// ═══════════ ADMIN DATA REFRESH ═══════════
+function refreshAdminUsers(){
+  const tbody = document.getElementById('users-tbody');
+  document.getElementById('users-count').textContent = DB.users.length + ' total accounts';
+  tbody.innerHTML = DB.users.map(u=>`
+    <tr>
+      <td style="font-family:var(--mono);font-size:0.72rem;color:var(--text3)">${u.id}</td>
+      <td style="color:var(--blue2);font-weight:700">${u.username}</td>
+      <td><span class="status-badge ${u.role==='admin'?'admin':'active'}">${u.role}</span></td>
+      <td><span class="plan-badge ${u.plan}">${u.plan}</span></td>
+      <td style="font-family:var(--mono);font-size:0.78rem">${u.expires||'—'}</td>
+      <td style="font-family:var(--mono);color:${u.role==='admin'?'var(--blue2)':'var(--text)'}">${u.role==='admin'?'∞':u.queries||0}</td>
+      <td><span class="status-badge ${u.active?'active':'guest'}">${u.active?'Active':'Banned'}</span></td>
+      <td style="display:flex;gap:6px">
+        <button class="user-action-btn grant" onclick="grantUserSub('${u.id}')">Grant Sub</button>
+        ${u.role!=='admin'?`<button class="user-action-btn ban" onclick="banUser('${u.id}')">${u.active?'Ban':'Unban'}</button>`:''}
+      </td>
+    </tr>
+  `).join('');
+}
+
+function refreshAdminKeys(){
+  const tbody = document.getElementById('keys-tbody');
+  document.getElementById('keys-count').textContent = DB.keys.length + ' total keys';
+  tbody.innerHTML = DB.keys.map(k=>`
+    <tr>
+      <td style="font-family:var(--mono);font-size:0.78rem;color:var(--blue2)">${k.key}</td>
+      <td><span class="plan-badge ${k.type}">${k.type}</span></td>
+      <td style="font-family:var(--mono)">${k.voip_minutes}</td>
+      <td>${k.created_by}</td>
+      <td style="color:${k.used_by?'var(--text2)':'var(--text3)'}">${k.used_by||'Unused'}</td>
+      <td><span class="status-badge ${k.active&&!k.used_by?'active':'guest'}">${k.used_by?'Used':k.active?'Active':'Inactive'}</span></td>
+      <td style="color:var(--text3)">${k.note||'—'}</td>
+    </tr>
+  `).join('');
+}
+
+function refreshAdminKPIs(){
+  document.getElementById('kpi-total-users').textContent = DB.users.length;
+  document.getElementById('kpi-active-subs').textContent = DB.users.filter(u=>u.plan==='week'||u.plan==='month'||u.plan==='lifetime').length;
+  document.getElementById('kpi-keys').textContent = DB.keys.filter(k=>k.active&&!k.used_by).length;
+}
+
+function generateKey(){
+  const type = document.getElementById('key-type').value;
+  const minutes = parseInt(document.getElementById('key-minutes').value)||100;
+  const note = document.getElementById('key-note').value.trim();
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const seg = ()=>Array.from({length:4},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+  const key = `BKAMT-${seg()}-${type.toUpperCase().slice(0,4)}-2026-${seg()}`;
+  DB.keys.push({
+    key, type,
+    days: type==='week'?7:30,
+    voip_minutes: minutes,
+    created_by: currentUser?currentUser.username:'Admin',
+    created_at: new Date().toISOString(),
+    used_by: null, used_at: null, active: true,
+    note: note || ''
+  });
+  refreshAdminKeys();
+  refreshAdminKPIs();
+  document.getElementById('key-note').value = '';
+  showToast('Key generated: ' + key);
+  addAuditLog('tool', `<strong>${currentUser?.username||'Admin'}</strong> generated new ${type} key`);
+}
+
+function banUser(userId){
+  const u = DB.users.find(x=>x.id===userId);
+  if(!u) return;
+  u.active = !u.active;
+  refreshAdminUsers();
+  showToast(u.active ? u.username+' unbanned' : u.username+' banned');
+}
+
+function grantUserSub(userId){
+  const u = DB.users.find(x=>x.id===userId);
+  if(!u) return;
+  u.plan = 'month';
+  const d = new Date(); d.setDate(d.getDate()+30);
+  u.expires = d.toISOString().split('T')[0];
+  u.voip_minutes = (u.voip_minutes||0)+500;
+  refreshAdminUsers();
+  refreshAdminKPIs();
+  showToast('Monthly subscription granted to ' + u.username);
+  addAuditLog('pay', `Admin granted monthly sub to <strong>${u.username}</strong>`);
+}
+
+// ═══════════ AUDIT LOG ═══════════
+function addAuditLog(type, text){
+  DB.audit_logs.unshift({type, text, time: new Date().toISOString()});
+  const feed = document.getElementById('activity-feed');
+  const iconMap = {login:'login',tool:'tool',pay:'pay',voip:'voip',warn:'warn'};
+  const iconPh = {login:'ph-sign-in',tool:'ph-magnifying-glass',pay:'ph-currency-btc',voip:'ph-phone',warn:'ph-warning'};
+  const item = document.createElement('div');
+  item.className = 'activity-item';
+  item.innerHTML = `<div class="activity-ico ${iconMap[type]||'tool'}"><i class="ph ${iconPh[type]||'ph-circle'}"></i></div>
+    <div class="activity-text"><div class="activity-main">${text}</div><div class="activity-meta">Just now</div></div>`;
+  feed.insertBefore(item, feed.firstChild);
+  document.getElementById('activity-count').textContent = DB.audit_logs.length + ' events';
+}
+
+// ═══════════ CHECKOUT MODAL ═══════════
+function openModal(plan){
+  currentPlan = plan; selectedCoin = 'btc';
+  document.getElementById('checkout-title').textContent = plan==='week'?'Weekly Access — $39.99':'Monthly Access — $69.99';
+  document.querySelectorAll('.pay-m').forEach((m,i)=>m.classList.toggle('selected',i===0));
+  updateCryptoBox();
+  document.getElementById('checkout-modal').classList.add('open');
+}
+function closeCheckout(){ document.getElementById('checkout-modal').classList.remove('open'); }
+function closeCheckoutOutside(e){ if(e.target===document.getElementById('checkout-modal')) closeCheckout(); }
+function selectCoin(el,coin){
+  document.querySelectorAll('.pay-m').forEach(m=>m.classList.remove('selected'));
+  el.classList.add('selected'); selectedCoin=coin; updateCryptoBox();
+}
+function updateCryptoBox(){
+  const w=WALLETS[selectedCoin], p=PRICES[currentPlan];
+  document.getElementById('c-amount').textContent = p[selectedCoin]+' '+w.sym;
+  document.getElementById('c-usd').textContent = 'approx. $'+p.usd+' USD';
+  document.getElementById('c-addr').textContent = w.addr;
+}
+function copyAddr(){
+  const addr=document.getElementById('c-addr').textContent;
+  navigator.clipboard.writeText(addr).then(()=>showToast('Address copied!')).catch(()=>showToast('Copy from the box above'));
+}
+
+// ═══════════ TABLE FILTER ═══════════
+function filterTable(input, tableId){
+  const q=input.value.toLowerCase();
+  document.querySelectorAll('#'+tableId+' tbody tr').forEach(r=>{
+    r.style.display=r.textContent.toLowerCase().includes(q)?'':'none';
+  });
+}
+
+// ═══════════ SMOOTH SCROLL ═══════════
+function scrollTo2(id){
+  showLanding();
+  setTimeout(()=>{ const el=document.getElementById(id); if(el) el.scrollIntoView({behavior:'smooth'}); },100);
+}
+
+// ═══════════ TOAST ═══════════
+function showToast(msg){
+  const t=document.getElementById('toast');
+  document.getElementById('toast-msg').textContent=msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t=setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+// ═══════════ INIT ═══════════
+window.onload = function(){
+  renderToolsGrid();
+  const seen = sessionStorage.getItem('visited');
+  if(!seen){ sessionStorage.setItem('visited','1'); setTimeout(()=>openAuthModal('login'),700); }
+};
+</script>
+</body>
+</html>
