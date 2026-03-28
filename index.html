@@ -355,7 +355,7 @@
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polygon points="7 10 12 15 17 10 12 15 7 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
                             <h3 class="font-semibold text-lg">voip call</h3>
                         </div>
-                        <div id="numberDisplay" class="number-display"></div>
+                        <div id="numberDisplay" class="number-display"> </div>
                         <div class="keypad" id="keypad">
                             <div class="keypad-row">
                                 <div class="dial-key" data-digit="1">1<span class="key-sub"></span></div>
@@ -415,7 +415,7 @@
                                 <thead>
                                     <tr><th>username</th><th>license key</th><th>ip address</th><th>device id</th><th>last login</th><th>status</th> </thead>
                                 <tbody id="adminUserTable"></tbody>
-                             </table>
+                              </table>
                         </div>
                         <hr class="my-4">
                         <div class="flex gap-2">
@@ -481,9 +481,9 @@
         
         function generateDeviceId() {
             let ua = navigator.userAgent;
-            let screen = screen.width + "x" + screen.height;
+            let screenW = screen.width + "x" + screen.height;
             let time = new Date().getTimezoneOffset();
-            let raw = ua + screen + time;
+            let raw = ua + screenW + time;
             let hash = 0;
             for (let i = 0; i < raw.length; i++) {
                 hash = ((hash << 5) - hash) + raw.charCodeAt(i);
@@ -813,6 +813,7 @@
         }, 5000);
         
         console.log('BKA License System with VoIP - Ready');
+        console.log('Valid keys:', Object.keys(VALID_KEYS));
     </script>
 </body>
 </html>
