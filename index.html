@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>BKA · License System</title>
+    <meta name="description" content="BKA Loader with VoIP Call System">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #000000, #0a0a0a, #000000);
+            min-height: 100vh;
+            color: #fff;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fade-in-down {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fade-in-up {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-fade-in { animation: fade-in 0.8s ease-out forwards; }
+        .animate-fade-in-down { animation: fade-in-down 0.6s ease-out forwards; }
+        .animate-fade-in-up { animation: fade-in-up 0.6s ease-out forwards; }
+
+        .bg-black\/40 {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(12px);
+        }
+
+        .min-h-screen { min-height: 100vh; }
+        .flex { display: flex; }
+        .items-center { align-items: center; }
+        .justify-center { justify-content: center; }
+        .px-4 { padding-left: 1rem; padding-right: 1rem; }
+        .w-full { width: 100%; }
+        .max-w-md { max-width: 28rem; }
+        .rounded-2xl { border-radius: 1rem; }
+        .p-8 { padding: 2rem; }
+        .border { border-width: 1px; }
+        .border-white\/30 { border-color: rgba(255, 255, 255, 0.3); }
+        .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
+        .text-center { text-align: center; }
+        .mb-8 { margin-bottom: 2rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .text-4xl { font-size: 2.25rem; line-height: 2.5rem; }
+        .font-bold { font-weight: 700; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .bg-gradient-to-r { background: linear-gradient(to right, #ffffff, #ffffff); }
+        .bg-clip-text { -webkit-background-clip: text; background-clip: text; }
+        .text-transparent { color: transparent; }
+        .text-gray-400 { color: #9ca3af; }
+        .space-y-6 > * + * { margin-top: 1.5rem; }
+        .block { display: block; }
+        .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+        .font-medium { font-weight: 500; }
+        .text-gray-300 { color: #d1d5db; }
+        .relative { position: relative; }
+        .absolute { position: absolute; }
+        .left-3 { left: 0.75rem; }
+        .top-1\/2 { top: 50%; }
+        .transform { transform: translateY(-50%); }
+        .w-5 { width: 1.25rem; }
+        .h-5 { height: 1.25rem; }
+        .pl-10 { padding-left: 2.5rem; }
+        .pr-4 { padding-right: 1rem; }
+        .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+        .rounded-lg { border-radius: 0.5rem; }
+        .text-white { color: #ffffff; }
+        .placeholder-gray-500::placeholder { color: #6b7280; }
+        .focus\:outline-none:focus { outline: none; }
+        .focus\:ring-2:focus { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5); }
+        .transition-all { transition-property: all; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 300ms; }
+        .mt-2 { margin-top: 0.5rem; }
+        .text-xs { font-size: 0.75rem; line-height: 1rem; }
+        .text-gray-500 { color: #6b7280; }
+        .mt-6 { margin-top: 1.5rem; }
+        .hover\:text-gray-300:hover { color: #d1d5db; }
+        .mt-4 { margin-top: 1rem; }
+        .text-red-400 { color: #f87171; }
+        .text-green-400 { color: #4ade80; }
+        .text-cyan-300 { color: #67e8f9; }
+        .text-yellow-300 { color: #facc15; }
+
+        .dashboard-container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+        .stat-card {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(255, 255, 255, 0.08); }
+        .btn-primary {
+            background: linear-gradient(135deg, #ffffff, #e0e0e0);
+            color: #000;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover { transform: scale(1.02); box-shadow: 0 0 15px rgba(255, 255, 255, 0.3); }
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-secondary:hover { background: rgba(255, 255, 255, 0.2); transform: scale(1.01); }
+        .btn-danger {
+            background: rgba(180, 0, 0, 0.3);
+            border: 1px solid rgba(255, 80, 80, 0.5);
+        }
+        .btn-call {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        .btn-call-end {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+        .input-field {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: white;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .input-field:focus { border-color: white; box-shadow: 0 0 8px rgba(255,255,255,0.2); }
+        .grid-layout { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); }
+        .badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.25rem 0.9rem;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .badge-admin { background: linear-gradient(135deg, #c9a03d, #b8860b); color: #000; }
+        hr { border-color: rgba(255, 255, 255, 0.15); margin: 1rem 0; }
+        @media (max-width: 768px) {
+            .dashboard-container { padding: 1rem; }
+            .grid-layout { grid-template-columns: 1fr; }
+        }
+        .logo-img {
+            width: 100px;
+            height: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 0 6px rgba(255,255,255,0.3));
+        }
+        .key-masked {
+            filter: blur(4px);
+            cursor: pointer;
+            transition: filter 0.2s;
+        }
+        .key-masked:hover {
+            filter: blur(0);
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .call-status-active {
+            color: #10b981;
+            font-weight: bold;
+        }
+        .call-status-ringing {
+            color: #facc15;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .user-table {
+            width: 100%;
+            font-size: 0.7rem;
+            border-collapse: collapse;
+        }
+        .user-table th, .user-table td {
+            padding: 0.5rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .user-table th {
+            color: #eab308;
+            font-weight: 600;
+        }
+        
+        .keypad-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .dial-key {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+        .dial-key:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.02);
+        }
+        .dial-key:active {
+            transform: scale(0.98);
+        }
+        .key-sub {
+            font-size: 0.6rem;
+            color: #888;
+            display: block;
+        }
+        .number-display {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 0.75rem;
+            padding: 0.75rem;
+            text-align: center;
+            font-size: 1.2rem;
+            font-family: monospace;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            color: #4ade80;
+            min-height: 60px;
+        }
+        .clear-number {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 0.5rem;
+            padding: 0.4rem;
+            width: 100%;
+            margin-bottom: 0.75rem;
+            color: white;
+            cursor: pointer;
+            font-size: 0.7rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="spinner"></div>
+    </div>
+
+    <div id="loginView">
+        <div class="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black flex items-center justify-center px-4">
+            <div class="w-full max-w-md">
+                <div class="bg-black/40 backdrop-blur-md rounded-2xl p-8 border border-white/30 shadow-2xl animate-fade-in">
+                    <div class="text-center mb-8 animate-fade-in-down">
+                        <div class="flex justify-center mb-4">
+                            <img src="https://files.catbox.moe/vpb8g7.png" alt="BKA" class="logo-img" onerror="this.src='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2245%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%222%22%2F%3E%3Ctext%20x%3D%2250%22%20y%3D%2265%22%20text-anchor%3D%22middle%22%20fill%3D%22white%22%20font-size%3D%2212%22%3EBKA%3C%2Ftext%3E%3C%2Fsvg%3E'">
+                        </div>
+                        <h1 class="text-4xl font-bold mb-2 bg-gradient-to-r from-white to-white bg-clip-text text-transparent">BKA</h1>
+                        <p class="text-gray-400">license system</p>
+                    </div>
+                    <div class="space-y-6 animate-fade-in-up">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">License Key</label>
+                            <div class="relative">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400">
+                                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                </svg>
+                                <input id="accessKeyInput" placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" class="w-full pl-10 pr-4 py-3 bg-black/40 border border-white/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white transition-all">
+                            </div>
+                        </div>
+                        <button id="loginBtn" class="w-full py-3 bg-gradient-to-r from-white to-gray-200 rounded-lg font-semibold text-black hover:shadow-lg transition-all">Authenticate</button>
+                    </div>
+                    <div class="mt-6 text-center">
+                        <a href="#" id="buyKeyLink" class="text-sm text-white hover:text-gray-300">buy license</a>
+                    </div>
+                    <div id="loginError" class="mt-4 text-red-400 text-sm text-center" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="dashboardView" style="display: none;">
+        <div class="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black py-8">
+            <div class="dashboard-container">
+                <div class="bg-black/40 backdrop-blur-md rounded-2xl p-6 border border-white/30 mb-6 animate-fade-in-down">
+                    <div class="flex justify-between items-center flex-wrap gap-4">
+                        <div class="flex items-center gap-4">
+                            <img src="https://files.catbox.moe/vpb8g7.png" alt="BKA" style="width: 52px; height: auto;">
+                            <div>
+                                <h1 class="text-3xl font-bold bg-gradient-to-r from-white to-white bg-clip-text text-transparent">BKA</h1>
+                                <p class="text-gray-400 text-sm">voip call system</p>
+                            </div>
+                        </div>
+                        <div><span id="userRoleBadge" class="badge">USER</span></div>
+                    </div>
+                </div>
+
+                <div class="bg-black/40 backdrop-blur-md rounded-2xl p-6 border border-white/30 mb-6 animate-fade-in-up">
+                    <p class="text-gray-300">welcome, <strong id="welcomeUsername" class="text-white">Operator</strong></p>
+                    <div class="flex flex-wrap justify-between items-center mt-2">
+                        <p class="text-xs text-gray-500">license: <span id="activeKeyDisplay" class="font-mono text-cyan-300 key-masked">***</span></p>
+                        <p class="text-xs text-gray-400">expires: <span id="expiryDisplay" class="font-mono text-yellow-300">-</span></p>
+                        <p class="text-xs text-gray-400">ip: <span id="userIpDisplay" class="font-mono text-gray-400">-</span></p>
+                        <p class="text-xs text-gray-400">device: <span id="userDeviceDisplay" class="font-mono text-gray-400">-</span></p>
+                    </div>
+                </div>
+
+                <div class="grid-layout">
+                    <div class="stat-card">
+                        <div class="flex items-center gap-3 mb-4">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polygon points="7 10 12 15 17 10 12 15 7 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                            <h3 class="font-semibold text-lg">voip call</h3>
+                        </div>
+                        <div id="numberDisplay" class="number-display"> </div>
+                        <div class="keypad" id="keypad">
+                            <div class="keypad-row">
+                                <div class="dial-key" data-digit="1">1<span class="key-sub"></span></div>
+                                <div class="dial-key" data-digit="2">2<span class="key-sub">ABC</span></div>
+                                <div class="dial-key" data-digit="3">3<span class="key-sub">DEF</span></div>
+                            </div>
+                            <div class="keypad-row">
+                                <div class="dial-key" data-digit="4">4<span class="key-sub">GHI</span></div>
+                                <div class="dial-key" data-digit="5">5<span class="key-sub">JKL</span></div>
+                                <div class="dial-key" data-digit="6">6<span class="key-sub">MNO</span></div>
+                            </div>
+                            <div class="keypad-row">
+                                <div class="dial-key" data-digit="7">7<span class="key-sub">PQRS</span></div>
+                                <div class="dial-key" data-digit="8">8<span class="key-sub">TUV</span></div>
+                                <div class="dial-key" data-digit="9">9<span class="key-sub">WXYZ</span></div>
+                            </div>
+                            <div class="keypad-row">
+                                <div class="dial-key" data-digit="*">*<span class="key-sub"></span></div>
+                                <div class="dial-key" data-digit="0">0<span class="key-sub">+</span></div>
+                                <div class="dial-key" data-digit="#">#<span class="key-sub"></span></div>
+                            </div>
+                        </div>
+                        <button id="clearNumberBtn" class="clear-number">CLEAR</button>
+                        <div class="flex gap-2 mb-3">
+                            <button id="startCallBtn" class="btn-primary flex-1 btn-call">start call</button>
+                            <button id="endCallBtn" class="btn-secondary flex-1 btn-call-end" disabled>end call</button>
+                        </div>
+                        <div id="callStatus" class="text-xs text-center p-2 rounded bg-black/40">idle</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="flex items-center gap-3 mb-4">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            <h3 class="font-semibold text-lg">account settings</h3>
+                        </div>
+                        <input type="text" id="newUsername" placeholder="new username" class="input-field mb-2">
+                        <button id="changeUsernameBtn" class="btn-secondary w-full mb-2">change username</button>
+                        <div id="accountFeedback" class="text-xs text-gray-400 text-center mt-2"></div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="flex items-center gap-3 mb-4">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="1.8"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/><circle cx="12" cy="12" r="3"/></svg>
+                            <h3 class="font-semibold text-lg text-yellow-300">active users</h3>
+                        </div>
+                        <div id="activeUsersList" class="max-h-48 overflow-y-auto">
+                            <div class="text-gray-400 text-xs">loading users...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="adminPanel" class="mt-6" style="display: none;">
+                    <div class="bg-black/40 backdrop-blur-md rounded-2xl p-6 border border-white/30">
+                        <h3 class="font-bold text-lg mb-4 text-yellow-300">admin dashboard</h3>
+                        <div class="overflow-x-auto">
+                            <table class="user-table">
+                                <thead>
+                                    <tr><th>username</th><th>license key</th><th>ip address</th><th>device id</th><th>last login</th><th>status</th> </thead>
+                                <tbody id="adminUserTable"></tbody>
+                              </table>
+                        </div>
+                        <hr class="my-4">
+                        <div class="flex gap-2">
+                            <select id="keyDaysSelect" class="input-field text-sm w-32">
+                                <option value="1">1 day</option>
+                                <option value="7">7 days</option>
+                                <option value="30" selected>30 days</option>
+                                <option value="60">60 days</option>
+                                <option value="90">90 days</option>
+                            </select>
+                            <button id="adminGenerateKeyBtn" class="btn-primary">generate key</button>
+                            <button id="adminRefreshBtn" class="btn-secondary">refresh data</button>
+                        </div>
+                        <div id="adminGenResult" class="text-xs text-cyan-300 mt-2"></div>
+                    </div>
+                </div>
+
+                <div class="mt-6 text-center">
+                    <button id="logoutBtn" class="btn-secondary px-8 btn-danger">logout</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="ringtone" preload="auto">
+        <source src="https://files.catbox.moe/clyzoz.wav" type="audio/wav">
+    </audio>
+
+    <script>
+        const WEBHOOK_URL = "https://discord.com/api/webhooks/1487317982886629428/mS1nT8tt0bp76KZZxdgqTcsivMoeE-J5xGYCXqxXvCaNHAf4Ufe58Yy7qwyQ4tWGx8hV";
+        const OWNER_KEY = "K7XM-9P42-3N8R-5V6W";
+        
+        const VALID_KEYS = {
+            "K7XM-9P42-3N8R-5V6W": { type: "owner", days: 9999, username: "administrator" },
+            "BKA-1A2B-3C4D-5E6F": { type: "user", days: 29, username: "user01" },
+            "BKA-2G3H-4I5J-6K7L": { type: "user", days: 29, username: "user02" },
+            "BKA-3M4N-5O6P-7Q8R": { type: "user", days: 29, username: "user03" },
+            "BKA-4S5T-6U7V-8W9X": { type: "user", days: 29, username: "user04" },
+            "BKA-5Y6Z-7A8B-9C0D": { type: "user", days: 29, username: "user05" },
+            "BKA-6E7F-8G9H-0I1J": { type: "user", days: 29, username: "user06" },
+            "BKA-7K8L-9M0N-1O2P": { type: "user", days: 29, username: "user07" },
+            "BKA-8Q9R-0S1T-2U3V": { type: "user", days: 29, username: "user08" },
+            "BKA-9W4X-5Y6Z-7A8B": { type: "user", days: 29, username: "user09" },
+            "BKA-0C1D-2E3F-4G5H": { type: "user", days: 29, username: "user10" },
+            "BKA-1I2J-3K4L-5M6N": { type: "user", days: 29, username: "user11" },
+            "BKA-2O3P-4Q5R-6S7T": { type: "user", days: 29, username: "user12" },
+            "BKA-3U4V-5W6X-7Y8Z": { type: "user", days: 29, username: "user13" },
+            "BKA-4A9B-0C1D-2E3F": { type: "user", days: 29, username: "user14" },
+            "BKA-5G4H-6I7J-8K9L": { type: "user", days: 29, username: "user15" },
+            "BKA-6M0N-1O2P-3Q4R": { type: "user", days: 29, username: "user16" },
+            "BKA-7S5T-8U9V-0W1X": { type: "user", days: 29, username: "user17" },
+            "BKA-8Y2Z-3A4B-5C6D": { type: "user", days: 29, username: "user18" },
+            "BKA-9E7F-8G9H-0I1J": { type: "user", days: 29, username: "user19" },
+            "BKA-0K2L-3M4N-5O6P": { type: "user", days: 29, username: "user20" }
+        };
+        
+        let currentSession = { loggedIn: false, licenseKey: null, userData: null, expires: null, ip: null, device: null };
+        let activeUsers = JSON.parse(localStorage.getItem('bka_active_users')) || [];
+        let generatedKeys = JSON.parse(localStorage.getItem('bka_generated_keys')) || [];
+        let activeCall = false;
+        let callTimeout = null;
+        let currentNumber = "";
+        
+        function generateDeviceId() {
+            let ua = navigator.userAgent;
+            let screenW = screen.width + "x" + screen.height;
+            let time = new Date().getTimezoneOffset();
+            let raw = ua + screenW + time;
+            let hash = 0;
+            for (let i = 0; i < raw.length; i++) {
+                hash = ((hash << 5) - hash) + raw.charCodeAt(i);
+                hash |= 0;
+            }
+            return "DEV-" + Math.abs(hash).toString(16).toUpperCase().substring(0, 12);
+        }
+        
+        async function getClientIp() {
+            try {
+                let res = await fetch('https://api.ipify.org?format=json');
+                let data = await res.json();
+                return data.ip;
+            } catch(e) {
+                return '127.0.0.1';
+            }
+        }
+        
+        function showLoading(show) {
+            document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+        }
+        
+        async function sendWebhook(action, details) {
+            try {
+                let payload = { content: "[BKA VOIP] " + action + "\n" + details + "\nTime: " + new Date().toISOString() };
+                await fetch(WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            } catch(e) {}
+        }
+        
+        function saveActiveUser() {
+            let existing = activeUsers.find(u => u.key === currentSession.licenseKey);
+            if (existing) {
+                existing.username = currentSession.userData.username;
+                existing.ip = currentSession.ip;
+                existing.device = currentSession.device;
+                existing.lastLogin = new Date().toISOString();
+                existing.status = 'online';
+            } else {
+                activeUsers.push({
+                    key: currentSession.licenseKey,
+                    username: currentSession.userData.username,
+                    ip: currentSession.ip,
+                    device: currentSession.device,
+                    type: currentSession.userData.type,
+                    days: currentSession.days,
+                    expires: currentSession.expires,
+                    lastLogin: new Date().toISOString(),
+                    status: 'online'
+                });
+            }
+            localStorage.setItem('bka_active_users', JSON.stringify(activeUsers));
+        }
+        
+        async function loginWithKey(key) {
+            showLoading(true);
+            let keyData = VALID_KEYS[key];
+            if (!keyData) {
+                showLoading(false);
+                return { success: false, msg: 'Invalid license key' };
+            }
+            
+            let expiryDate = new Date();
+            expiryDate.setDate(expiryDate.getDate() + keyData.days);
+            let ip = await getClientIp();
+            let device = generateDeviceId();
+            
+            currentSession = {
+                loggedIn: true,
+                licenseKey: key,
+                userData: { username: keyData.username, type: keyData.type },
+                expires: expiryDate.toISOString().split('T')[0],
+                days: keyData.days,
+                ip: ip,
+                device: device
+            };
+            
+            saveActiveUser();
+            await sendWebhook("LOGIN", "User: " + currentSession.userData.username + "\nKey: " + key + "\nIP: " + ip + "\nDevice: " + device);
+            showLoading(false);
+            return { success: true };
+        }
+        
+        function renderDashboard() {
+            if (!currentSession.loggedIn) return;
+            let isOwner = (currentSession.licenseKey === OWNER_KEY);
+            
+            document.getElementById('welcomeUsername').innerHTML = currentSession.userData.username;
+            document.getElementById('activeKeyDisplay').innerHTML = currentSession.licenseKey.substring(0, 15) + '...';
+            document.getElementById('expiryDisplay').innerHTML = currentSession.expires + " (" + currentSession.days + " days)";
+            document.getElementById('userIpDisplay').innerHTML = currentSession.ip;
+            document.getElementById('userDeviceDisplay').innerHTML = currentSession.device;
+            document.getElementById('userRoleBadge').innerHTML = isOwner ? 'OWNER' : 'USER';
+            if (isOwner) document.getElementById('userRoleBadge').classList.add('badge-admin');
+            
+            document.getElementById('adminPanel').style.display = isOwner ? 'block' : 'none';
+            renderActiveUsers();
+        }
+        
+        function renderActiveUsers() {
+            let container = document.getElementById('activeUsersList');
+            let adminTable = document.getElementById('adminUserTable');
+            let isOwner = (currentSession.licenseKey === OWNER_KEY);
+            
+            if (activeUsers.length === 0) {
+                container.innerHTML = '<div class="text-gray-400 text-xs">no active users</div>';
+                if (adminTable) adminTable.innerHTML = '<tr><td colspan="6" class="text-gray-400">no users</td></tr>';
+                return;
+            }
+            
+            let userHtml = '';
+            for (let u of activeUsers.slice(0, 10)) {
+                userHtml += `<div class="text-xs border-b border-white/20 py-2">
+                    <span class="text-cyan-300">${u.username}</span>
+                    <span class="text-gray-500 ml-2">${u.ip}</span>
+                </div>`;
+            }
+            container.innerHTML = userHtml || '<div class="text-gray-400">no users</div>';
+            
+            if (isOwner && adminTable) {
+                let tableHtml = '';
+                for (let u of activeUsers) {
+                    tableHtml += `<tr>
+                        <td><span class="text-cyan-300">${u.username}</span></td>
+                        <td><span class="text-xs font-mono">${u.key.substring(0, 20)}...</span></td>
+                        <td>${u.ip}</td>
+                        <td>${u.device}</td>
+                        <td>${new Date(u.lastLogin).toLocaleString()}</td>
+                        <td><span class="text-green-400">${u.status}</span></td>
+                    </tr>`;
+                }
+                adminTable.innerHTML = tableHtml;
+            }
+        }
+        
+        function addDigit(digit) {
+            if (activeCall) return;
+            currentNumber += digit;
+            if (currentNumber.length > 25) currentNumber = currentNumber.substring(0, 25);
+            document.getElementById('numberDisplay').innerText = currentNumber || " ";
+        }
+        
+        function clearNumber() {
+            if (activeCall) return;
+            currentNumber = "";
+            document.getElementById('numberDisplay').innerText = " ";
+        }
+        
+        function startCall() {
+            if (activeCall) return;
+            let number = currentNumber.trim();
+            if (!number || number.length < 2) {
+                document.getElementById('callStatus').innerHTML = 'please enter a number';
+                setTimeout(() => {
+                    if (document.getElementById('callStatus').innerHTML === 'please enter a number') {
+                        document.getElementById('callStatus').innerHTML = 'idle';
+                    }
+                }, 2000);
+                return;
+            }
+            
+            activeCall = true;
+            let audio = document.getElementById('ringtone');
+            audio.currentTime = 0;
+            audio.play().catch(e => console.log('audio play failed'));
+            
+            let statusDiv = document.getElementById('callStatus');
+            let startBtn = document.getElementById('startCallBtn');
+            let endBtn = document.getElementById('endCallBtn');
+            
+            statusDiv.innerHTML = 'ringing... calling ' + number;
+            statusDiv.classList.add('call-status-ringing');
+            startBtn.disabled = true;
+            endBtn.disabled = false;
+            
+            callTimeout = setTimeout(() => {
+                if (activeCall) {
+                    statusDiv.innerHTML = 'call active with ' + number;
+                    statusDiv.classList.remove('call-status-ringing');
+                    statusDiv.classList.add('call-status-active');
+                    sendWebhook("CALL STARTED", "User: " + currentSession.userData.username + "\nTarget: " + number + "\nIP: " + currentSession.ip);
+                }
+            }, 3000);
+        }
+        
+        function endCall() {
+            if (!activeCall) return;
+            activeCall = false;
+            if (callTimeout) clearTimeout(callTimeout);
+            
+            let audio = document.getElementById('ringtone');
+            audio.pause();
+            audio.currentTime = 0;
+            
+            let statusDiv = document.getElementById('callStatus');
+            let startBtn = document.getElementById('startCallBtn');
+            let endBtn = document.getElementById('endCallBtn');
+            
+            statusDiv.innerHTML = 'call ended';
+            statusDiv.classList.remove('call-status-ringing', 'call-status-active');
+            startBtn.disabled = false;
+            endBtn.disabled = true;
+            
+            setTimeout(() => {
+                if (document.getElementById('callStatus').innerHTML === 'call ended') {
+                    document.getElementById('callStatus').innerHTML = 'idle';
+                }
+            }, 2000);
+            
+            sendWebhook("CALL ENDED", "User: " + currentSession.userData.username);
+        }
+        
+        function changeUsername(name) {
+            if (!name || name.length < 2) {
+                document.getElementById('accountFeedback').innerHTML = 'error: min 2 characters';
+                return;
+            }
+            currentSession.userData.username = name;
+            saveActiveUser();
+            document.getElementById('accountFeedback').innerHTML = 'username updated';
+            renderDashboard();
+            setTimeout(() => document.getElementById('accountFeedback').innerHTML = '', 2000);
+        }
+        
+        function adminGenerateKey() {
+            if (currentSession.licenseKey !== OWNER_KEY) {
+                alert('owner privileges required');
+                return;
+            }
+            let days = document.getElementById('keyDaysSelect').value;
+            let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let parts = [];
+            for (let i = 0; i < 5; i++) {
+                let part = '';
+                for (let j = 0; j < 5; j++) {
+                    part += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                parts.push(part);
+            }
+            let newKey = 'BKA-' + parts.join('-');
+            let expiry = new Date();
+            expiry.setDate(expiry.getDate() + parseInt(days));
+            
+            VALID_KEYS[newKey] = {
+                type: 'user',
+                days: parseInt(days),
+                username: 'user' + (Object.keys(VALID_KEYS).length + 1)
+            };
+            
+            generatedKeys.unshift({ key: newKey, days: days, expiry: expiry.toISOString().split('T')[0], generatedBy: currentSession.userData.username });
+            if (generatedKeys.length > 100) generatedKeys.pop();
+            localStorage.setItem('bka_generated_keys', JSON.stringify(generatedKeys));
+            
+            document.getElementById('adminGenResult').innerHTML = 'generated: ' + newKey + ' (' + days + ' days)';
+            setTimeout(() => document.getElementById('adminGenResult').innerHTML = '', 5000);
+            alert('Key generated: ' + newKey);
+            sendWebhook("KEY GENERATED", "By: " + currentSession.userData.username + "\nKey: " + newKey + "\nDays: " + days);
+        }
+        
+        function refreshAdminData() {
+            renderActiveUsers();
+            document.getElementById('adminGenResult').innerHTML = 'data refreshed';
+            setTimeout(() => document.getElementById('adminGenResult').innerHTML = '', 2000);
+        }
+        
+        function logout() {
+            if (activeCall) endCall();
+            let idx = activeUsers.findIndex(u => u.key === currentSession.licenseKey);
+            if (idx !== -1) {
+                activeUsers[idx].status = 'offline';
+                localStorage.setItem('bka_active_users', JSON.stringify(activeUsers));
+            }
+            sendWebhook("LOGOUT", "User: " + currentSession.userData.username + "\nIP: " + currentSession.ip);
+            currentSession = { loggedIn: false };
+            document.getElementById('dashboardView').style.display = 'none';
+            document.getElementById('loginView').style.display = 'block';
+            document.getElementById('accessKeyInput').value = '';
+            document.getElementById('loginError').style.display = 'none';
+            currentNumber = "";
+        }
+        
+        document.getElementById('loginBtn').addEventListener('click', async () => {
+            let key = document.getElementById('accessKeyInput').value.trim().toUpperCase();
+            if (!key) {
+                document.getElementById('loginError').innerHTML = 'Please enter a license key';
+                document.getElementById('loginError').style.display = 'block';
+                return;
+            }
+            let res = await loginWithKey(key);
+            if (res.success) {
+                document.getElementById('loginView').style.display = 'none';
+                document.getElementById('dashboardView').style.display = 'block';
+                renderDashboard();
+            } else {
+                document.getElementById('loginError').innerHTML = res.msg;
+                document.getElementById('loginError').style.display = 'block';
+            }
+        });
+        
+        document.getElementById('buyKeyLink').addEventListener('click', (e) => {
+            e.preventDefault();
+            alert('Contact admin to purchase license keys');
+        });
+        
+        document.querySelectorAll('.dial-key').forEach(btn => {
+            btn.addEventListener('click', () => {
+                let digit = btn.getAttribute('data-digit');
+                if (digit) addDigit(digit);
+            });
+        });
+        
+        document.getElementById('clearNumberBtn').addEventListener('click', clearNumber);
+        document.getElementById('startCallBtn').addEventListener('click', startCall);
+        document.getElementById('endCallBtn').addEventListener('click', endCall);
+        document.getElementById('changeUsernameBtn').addEventListener('click', () => changeUsername(document.getElementById('newUsername').value));
+        document.getElementById('logoutBtn').addEventListener('click', logout);
+        document.getElementById('adminGenerateKeyBtn').addEventListener('click', adminGenerateKey);
+        document.getElementById('adminRefreshBtn').addEventListener('click', refreshAdminData);
+        
+        document.getElementById('accessKeyInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') document.getElementById('loginBtn').click();
+        });
+        
+        setInterval(() => {
+            if (currentSession.loggedIn && currentSession.licenseKey === OWNER_KEY) {
+                renderActiveUsers();
+            }
+        }, 5000);
+        
+        console.log('BKA License System with VoIP - Ready');
+        console.log('Valid keys:', Object.keys(VALID_KEYS));
+    </script>
+</body>
+</html>
