@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RezSoftware - Loader Access</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:opsz,wght@9..40,300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #07050d;
+    --surface: rgba(20, 14, 30, 0.78);
+    --surface-hover: rgba(30, 20, 44, 0.95);
+    --border: rgba(174, 124, 255, 0.24);
+    --border-hover: rgba(205, 168, 255, 0.55);
+    --violet-1: #9d4edd;
+    --violet-2: #b983ff;
+    --violet-3: #d5b3ff;
+    --violet-4: #eddcff;
+    --text-primary: #f7f1ff;
+    --text-secondary: #b8aacd;
+    --text-muted: #6f6189;
+    --accent-glow: rgba(157, 78, 221, 0.18);
+    --font-display: 'DM Sans', sans-serif;
+    --font-mono: 'Space Mono', monospace;
+  }
+
+  html, body {
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--font-display);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-thumb { background: var(--violet-1); border-radius: 99px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  .bg-scene {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .bg-scene::before {
+    content: '';
+    position: absolute;
+    top: -28%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 1000px;
+    height: 560px;
+    background: radial-gradient(ellipse, rgba(157,78,221,0.22) 0%, transparent 70%);
+    filter: blur(70px);
+  }
+  .bg-scene::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: -10%;
+    width: 620px;
+    height: 420px;
+    background: radial-gradient(ellipse, rgba(185,131,255,0.1) 0%, transparent 70%);
+    filter: blur(90px);
+  }
+  .bg-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(157,78,221,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(157,78,221,0.06) 1px, transparent 1px);
+    background-size: 62px 62px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
+  }
+
+  .page {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topbar {
+    width: min(1080px, calc(100% - 32px));
+    margin: 16px auto 0;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: rgba(10, 8, 16, 0.65);
+    backdrop-filter: blur(14px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .brand {
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-size: clamp(1rem, 2vw, 1.2rem);
+  }
+  .brand span { color: var(--violet-2); }
+  .session-pill {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--violet-3);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 5px 10px;
+  }
+
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 24px 80px;
+    gap: 80px;
+    transition: filter 0.3s ease, opacity 0.3s ease;
+  }
+  .content-locked {
+    filter: blur(7px) saturate(0.7);
+    opacity: 0.65;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .auth-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(7, 5, 13, 0.35);
+    backdrop-filter: blur(4px);
+  }
+  .auth-box {
+    width: min(450px, 96vw);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(30,20,45,0.96), rgba(17,12,29,0.98));
+    box-shadow: 0 26px 70px rgba(0,0,0,0.45), 0 0 0 1px rgba(157,78,221,0.1);
+    padding: 22px;
+    animation: fadeUp 0.55s cubic-bezier(0.16,1,0.3,1);
+  }
+  .auth-head { margin-bottom: 14px; }
+  .auth-title { font-size: 1.55rem; font-weight: 700; letter-spacing: -0.02em; }
+  .auth-sub { margin-top: 6px; color: var(--text-secondary); font-size: 0.92rem; }
+  .auth-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 12px 0 16px;
+  }
+  .tab-btn {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    color: var(--text-secondary);
+    background: rgba(255,255,255,0.02);
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+  .tab-btn.active {
+    border-color: rgba(185,131,255,0.55);
+    color: var(--violet-4);
+    background: linear-gradient(135deg, rgba(157,78,221,0.32), rgba(185,131,255,0.22));
+  }
+  .auth-msg {
+    display: none;
+    margin-bottom: 12px;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 0.84rem;
+  }
+  .auth-msg.show { display: block; }
+  .auth-msg.info { background: rgba(185,131,255,0.15); border: 1px solid rgba(185,131,255,0.35); color: #efdfff; }
+  .auth-msg.ok { background: rgba(95, 236, 167, 0.12); border: 1px solid rgba(95,236,167,0.35); color: #c7ffe7; }
+  .auth-msg.err { background: rgba(255, 99, 132, 0.12); border: 1px solid rgba(255,99,132,0.35); color: #ffc6d3; }
+  .auth-form { display: none; }
+  .auth-form.active { display: block; animation: fadeUp 0.25s ease; }
+  .field { margin-bottom: 11px; }
+  .field label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--text-secondary);
+    font-size: 0.73rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-family: var(--font-mono);
+  }
+  .field input {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: rgba(10, 8, 16, 0.8);
+    color: var(--text-primary);
+    padding: 12px;
+    outline: none;
+    transition: all 0.2s ease;
+  }
+  .field input:focus {
+    border-color: rgba(205,168,255,0.65);
+    box-shadow: 0 0 0 3px rgba(157,78,221,0.2);
+  }
+  .auth-submit {
+    width: 100%;
+    margin-top: 6px;
+    border: 1px solid rgba(185,131,255,0.45);
+    border-radius: 10px;
+    padding: 12px;
+    color: #fff;
+    background: linear-gradient(135deg, #8f39d9, #b05dff);
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+  .auth-submit:hover { transform: translateY(-1px); box-shadow: 0 10px 28px rgba(157,78,221,0.33); }
+
+  .header { text-align: center; opacity: 0; animation: fadeUp 0.9s cubic-bezier(0.16,1,0.3,1) 0.1s forwards; }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    border-radius: 99px;
+    border: 1px solid rgba(157,78,221,0.35);
+    background: rgba(157,78,221,0.11);
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--violet-3);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+  .badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--violet-2);
+    box-shadow: 0 0 8px var(--violet-2);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.84); }
+  }
+  h1 {
+    font-size: clamp(2.4rem, 6vw, 4.5rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: 18px;
+  }
+  h1 .accent { color: var(--violet-2); }
+  .subtitle {
+    color: var(--text-secondary);
+    font-size: clamp(0.95rem, 2vw, 1.1rem);
+    max-width: 500px;
+    margin: 0 auto;
+    line-height: 1.7;
+    font-weight: 300;
+  }
+
+  .cards-section {
+    width: 100%;
+    max-width: 1000px;
+    opacity: 0;
+    animation: fadeUp 0.9s cubic-bezier(0.16,1,0.3,1) 0.3s forwards;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 768px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 520px) { .grid { grid-template-columns: 1fr; } }
+
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 28px;
+    border-radius: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(20px);
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.25s cubic-bezier(0.4,0,0.2,1), border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  .card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(circle at 50% 100%, rgba(157,78,221,0.16) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: var(--border-hover);
+    background: var(--surface-hover);
+    box-shadow: 0 0 0 1px rgba(205,168,255,0.11), 0 20px 60px rgba(0,0,0,0.5), 0 0 40px rgba(157,78,221,0.16);
+  }
+  .card:hover::after { opacity: 1; }
+  .card.card-locked {
+    opacity: 0.38;
+    cursor: not-allowed;
+    pointer-events: none;
+    filter: saturate(0.3);
+  }
+  .card.card-locked::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(157,78,221,0.05) 8px, rgba(157,78,221,0.05) 16px);
+    z-index: 2;
+  }
+  .card-locked .card-lock-icon {
+    display: flex;
+  }
+  .card-lock-icon {
+    display: none;
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
+    font-size: 1rem;
+    color: var(--violet-3);
+    opacity: 0.7;
+  }
+  .license-notice {
+    width: 100%;
+    max-width: 1000px;
+    border: 1px solid rgba(174,124,255,0.3);
+    border-radius: 12px;
+    background: rgba(157,78,221,0.08);
+    backdrop-filter: blur(16px);
+    padding: 14px 20px;
+    display: none;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.84rem;
+    color: var(--text-secondary);
+    opacity: 0;
+    animation: fadeUp 0.5s ease 0.4s forwards;
+  }
+  .license-notice.show { display: flex; }
+  .license-notice i { color: var(--violet-2); font-size: 1.15rem; flex-shrink: 0; }
+  .license-notice strong { color: var(--violet-3); }
+  .card-icon-wrap {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(157,78,221,0.14);
+    border: 1px solid rgba(157,78,221,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 18px;
+    transition: all 0.25s ease;
+  }
+  .card:hover .card-icon-wrap {
+    background: rgba(185,131,255,0.2);
+    border-color: rgba(205,168,255,0.45);
+    box-shadow: 0 0 16px rgba(157,78,221,0.28);
+  }
+  .card-icon-wrap i {
+    font-size: 1.2rem;
+    color: var(--violet-3);
+    transition: color 0.25s ease;
+  }
+  .card:hover .card-icon-wrap i { color: var(--violet-4); }
+  .card-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+  }
+  .card-desc {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    font-weight: 300;
+  }
+  .card-arrow {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    transition: all 0.25s ease;
+    opacity: 0;
+    transform: translate(-4px, 4px);
+  }
+  .card:hover .card-arrow {
+    opacity: 1;
+    transform: translate(0, 0);
+    color: var(--violet-3);
+  }
+
+  .bottom-section {
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    opacity: 0;
+    animation: fadeUp 0.9s cubic-bezier(0.16,1,0.3,1) 0.5s forwards;
+  }
+  .version-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    border-radius: 99px;
+    background: rgba(157,78,221,0.09);
+    border: 1px solid rgba(157,78,221,0.24);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--violet-3);
+    letter-spacing: 0.05em;
+  }
+  .version-pill i { font-size: 0.85rem; }
+  .support-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 24px;
+    border-radius: 10px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: 0.01em;
+  }
+  .support-btn:hover {
+    border-color: rgba(205,168,255,0.5);
+    color: var(--violet-3);
+    background: rgba(157,78,221,0.1);
+    transform: translateY(-1px);
+  }
+  .support-btn i { font-size: 1rem; color: var(--violet-2); }
+  .download-section {
+    width: 100%;
+    max-width: 1000px;
+    opacity: 0;
+    animation: fadeUp 0.9s cubic-bezier(0.16,1,0.3,1) 0.35s forwards;
+  }
+  .download-block {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 22px 28px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(157,78,221,0.10), rgba(20,14,30,0.85));
+    backdrop-filter: blur(20px);
+    flex-wrap: wrap;
+  }
+  .download-block:hover {
+    border-color: var(--border-hover);
+    box-shadow: 0 0 40px rgba(157,78,221,0.14);
+  }
+  .download-info { display: flex; align-items: center; gap: 16px; }
+  .download-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: rgba(157,78,221,0.18);
+    border: 1px solid rgba(157,78,221,0.35);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .download-icon i { font-size: 1.3rem; color: var(--violet-3); }
+  .download-label { font-weight: 700; font-size: 0.95rem; margin-bottom: 3px; }
+  .download-meta { font-size: 0.78rem; color: var(--text-muted); }
+  .download-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 26px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #8f39d9, #b05dff);
+    border: 1px solid rgba(185,131,255,0.45);
+    color: #fff;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .download-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(157,78,221,0.33); }
+  .download-btn i { font-size: 1rem; }
+  .crypto-panel {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease;
+    opacity: 0;
+  }
+  .crypto-panel.open {
+    max-height: 300px;
+    opacity: 1;
+  }
+  @media (max-width: 520px) {
+    .crypto-panel { grid-template-columns: 1fr; }
+  }
+  .crypto-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    backdrop-filter: blur(20px);
+  }
+  .crypto-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .crypto-header i { font-size: 1.3rem; color: var(--violet-2); }
+  .crypto-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .crypto-address {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    background: rgba(0,0,0,0.26);
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    word-break: break-all;
+    line-height: 1.6;
+  }
+  .copy-btn {
+    width: 100%;
+    padding: 9px;
+    border-radius: 8px;
+    background: rgba(157,78,221,0.12);
+    border: 1px solid rgba(157,78,221,0.25);
+    color: var(--violet-3);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .copy-btn:hover {
+    background: rgba(157,78,221,0.22);
+    border-color: rgba(205,168,255,0.45);
+    transform: scale(1.01);
+  }
+
+  footer {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 28px 24px;
+    border-top: 1px solid var(--border);
+    background: rgba(8,6,12,0.5);
+    backdrop-filter: blur(20px);
+  }
+  .footer-discord {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--violet-2);
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+  .footer-discord:hover { color: var(--violet-4); }
+  .footer-meta {
+    margin-top: 8px;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    line-height: 1.8;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .toastify {
+    background: rgba(20,14,30,0.96) !important;
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(157,78,221,0.35);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    border-radius: 12px !important;
+    font-family: var(--font-display) !important;
+    padding: 14px 20px !important;
+    font-size: 0.85rem !important;
+    color: var(--text-primary) !important;
+  }
+
+  @media (max-width: 720px) {
+    .topbar { width: calc(100% - 16px); margin-top: 8px; }
+    main { padding: 34px 16px 70px; gap: 58px; }
+  }
+</style>
+</head>
+<body>
+<div class="bg-scene">
+  <div class="bg-grid"></div>
+</div>
+
+<div class="auth-overlay" id="auth-overlay">
+  <div class="auth-box">
+    <div class="auth-head">
+      <div class="auth-title">RezSoftware Access</div>
+      <div class="auth-sub">Login or create an account to access the loader dashboard.</div>
+    </div>
+
+    <div class="auth-tabs">
+      <button class="tab-btn active" id="tab-login" type="button" onclick="setAuthMode('login')">Login</button>
+      <button class="tab-btn" id="tab-register" type="button" onclick="setAuthMode('register')">Register</button>
+    </div>
+
+    <div class="auth-msg" id="auth-msg"></div>
+
+    <form class="auth-form active" id="form-login" onsubmit="doLogin(event)">
+      <div class="field">
+        <label>Username</label>
+        <input id="login-user" type="text" autocomplete="username" placeholder="your username" required />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input id="login-pass" type="password" autocomplete="current-password" placeholder="your password" required />
+      </div>
+      <button class="auth-submit" id="btn-login" type="submit">Log In</button>
+    </form>
+
+    <form class="auth-form" id="form-register" onsubmit="doRegister(event)">
+      <div class="field">
+        <label>Username</label>
+        <input id="reg-user" type="text" autocomplete="username" placeholder="choose username" required />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input id="reg-pass" type="password" autocomplete="new-password" placeholder="choose password" required />
+      </div>
+      <div class="field">
+        <label>Confirm Password</label>
+        <input id="reg-pass2" type="password" autocomplete="new-password" placeholder="confirm password" required />
+      </div>
+      <div class="field">
+        <label>License Key</label>
+        <input id="reg-key" type="text" placeholder="XXXX-XXXX-XXXX" required />
+        <div style="margin-top:5px;font-size:0.72rem;color:var(--text-muted);">A valid license key is required to create an account.</div>
+      </div>
+      <button class="auth-submit" id="btn-register" type="submit">Create Account</button>
+    </form>
+  </div>
+</div>
+
+<div class="page">
+  <div class="topbar">
+    <div class="brand">REZ<span>SOFTWARE</span></div>
+    <div class="session-pill" id="session-user">not logged in</div>
+  </div>
+
+  <main id="main-content" class="content-locked">
+    <div class="header">
+      <div class="badge">
+        <span class="badge-dot"></span>
+        Live and Updated
+      </div>
+      <h1><span class="accent">Rez</span>Software</h1>
+      <p class="subtitle">Login to access the loader dashboard. Activate a license to load and launch all products.</p>
+    </div>
+
+    <div class="license-notice" id="license-notice">
+        <i class="ph ph-lock-simple"></i>
+        <span>You are logged in but have <strong>no active license</strong>. Redeem a valid key in the settings panel to unlock all products.</span>
+      </div>
+
+    <div class="cards-section">
+      <div class="grid">
+        <a href="https://offsets.ntgetwritewatch.workers.dev/offsets.hpp" class="card">
+          <div class="card-icon-wrap"><i class="ph ph-file-cpp"></i></div>
+          <div class="card-title">offsets.hpp</div>
+          <div class="card-desc">C++ header format (legacy).</div>
+          <i class="ph ph-arrow-up-right card-arrow"></i>
+          <i class="ph ph-lock-simple card-lock-icon"></i>
+        </a>
+        <a href="https://offsets.ntgetwritewatch.workers.dev/offsets_structured.hpp" class="card">
+          <div class="card-icon-wrap"><i class="ph ph-file-cpp"></i></div>
+          <div class="card-title">offsets_structured.hpp</div>
+          <div class="card-desc">Structured C++ header for easy integration.</div>
+          <i class="ph ph-arrow-up-right card-arrow"></i>
+          <i class="ph ph-lock-simple card-lock-icon"></i>
+        </a>
+        <a href="https://offsets.ntgetwritewatch.workers.dev/offsets.json" class="card">
+          <div class="card-icon-wrap"><i class="ph ph-brackets-curly"></i></div>
+          <div class="card-title">offsets.json</div>
+          <div class="card-desc">JSON format for all toolchains.</div>
+          <i class="ph ph-arrow-up-right card-arrow"></i>
+          <i class="ph ph-lock-simple card-lock-icon"></i>
+        </a>
+        <a href="https://offsets.ntgetwritewatch.workers.dev/FFlags.hpp" class="card">
+          <div class="card-icon-wrap"><i class="ph ph-flag"></i></div>
+          <div class="card-title">fflags.hpp</div>
+          <div class="card-desc">FastFlag addresses and toggles.</div>
+          <i class="ph ph-arrow-up-right card-arrow"></i>
+          <i class="ph ph-lock-simple card-lock-icon"></i>
+        </a>
+        <a href="https://offsets.ntgetwritewatch.workers.dev/version" class="card">
+          <div class="card-icon-wrap"><i class="ph ph-tag"></i></div>
+          <div class="card-title">Version</div>
+          <div class="card-desc">Current release version endpoint.</div>
+          <i class="ph ph-arrow-up-right card-arrow"></i>
+          <i class="ph ph-lock-simple card-lock-icon"></i>
+        </a>
+        <a href="https://raw.githubusercontent.com/NtReadVirtualMemory/Roblox-Offsets-Website/main/internal-offsets.hpp" class="card">
+          <div class="card-icon-wrap"><i class="ph ph-lock-key"></i></div>
+          <div class="card-title">Internal Offsets</div>
+          <div class="card-desc">Internal offsets for advanced integration.</div>
+          <i class="ph ph-arrow-up-right card-arrow"></i>
+          <i class="ph ph-lock-simple card-lock-icon"></i>
+        </a>
+      </div>
+    </div>
+
+    <div class="download-section" id="download-section">
+      <div class="download-block">
+        <div class="download-info">
+          <div class="download-icon"><i class="ph ph-download-simple"></i></div>
+          <div>
+            <div class="download-label">RezSoftware Loader</div>
+            <div class="download-meta">Latest version &mdash; requires active license to use</div>
+          </div>
+        </div>
+        <a href="#" class="download-btn" id="loader-download-btn" onclick="downloadLoader(event)">
+          <i class="ph ph-download-simple"></i> Download Loader
+        </a>
+      </div>
+    </div>
+
+    <div class="bottom-section">
+      <div class="version-pill" id="version">
+        <i class="ph ph-git-commit"></i>
+        <span>loading version...</span>
+      </div>
+
+      <button class="support-btn" id="support-toggle" onclick="toggleSupport()">
+        <i class="ph ph-heart"></i>
+        <span id="support-label">Support the Project</span>
+      </button>
+
+      <div class="crypto-panel" id="crypto-panel">
+        <div class="crypto-card">
+          <div class="crypto-header">
+            <i class="ph ph-currency-btc"></i>
+            <span class="crypto-label">Bitcoin</span>
+          </div>
+          <div class="crypto-address" id="btc-address">bc1qdmhhlr8k4wak73vx0tf9xd3jux79su2s6yfgks</div>
+          <button class="copy-btn" onclick="copyToClipboard('btc-address')">
+            <i class="ph ph-copy"></i> Copy Address
+          </button>
+        </div>
+        <div class="crypto-card">
+          <div class="crypto-header">
+            <i class="ph ph-currency-circle-dollar"></i>
+            <span class="crypto-label">Litecoin</span>
+          </div>
+          <div class="crypto-address" id="ltc-address">LT6pHQ2puuS7t32SXAFr11rnZv6KnuDikz</div>
+          <button class="copy-btn" onclick="copyToClipboard('ltc-address')">
+            <i class="ph ph-copy"></i> Copy Address
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <a href="https://discord.gg/mvyXmWVkya" class="footer-discord">discord.gg/mvyXmWVkya</a>
+    <div class="footer-meta">© 2026 RezSoftware. All rights reserved.</div>
+  </footer>
+</div>
+
+<script>
+const KEYAUTH_APP = {
+  name: "loader",
+  ownerid: "qMVbhDdhYm",
+  secret: "ca44975e3cb42883ad4056ede6f4b8e3eea43dd0fb201ffb90a6f8ca685eead8",
+  ver: "1.0",
+  url: "https://keyauth.win/api/1.3/"
+};
+
+const AUTH_STATE_KEY = "rezSoftwareUser";
+const AUTH_LICENSE_KEY = "rezSoftwareLicense";
+
+let authMode = "login";
+let supportOpen = false;
+
+function id(v){ return document.getElementById(v); }
+
+function toast(message, ok = true) {
+  Toastify({
+    text: message,
+    duration: 2500,
+    gravity: "bottom",
+    position: "right",
+    style: { borderColor: ok ? "rgba(95,236,167,0.45)" : "rgba(255,99,132,0.45)" }
+  }).showToast();
+}
+
+function setAuthMode(mode){
+  authMode = mode === "register" ? "register" : "login";
+  id("tab-login").classList.toggle("active", authMode === "login");
+  id("tab-register").classList.toggle("active", authMode === "register");
+  id("form-login").classList.toggle("active", authMode === "login");
+  id("form-register").classList.toggle("active", authMode === "register");
+  setAuthMessage("", "");
+}
+
+function setAuthMessage(text, type) {
+  const box = id("auth-msg");
+  if (!text) {
+    box.className = "auth-msg";
+    box.textContent = "";
+    return;
+  }
+  box.className = "auth-msg show " + type;
+  box.textContent = text;
+}
+
+async function kaPost(params) {
+  try {
+    const res = await fetch(KEYAUTH_APP.url, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams(params).toString()
+    });
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { success: false, message: "Server returned invalid JSON" };
+    }
+  } catch (err) {
+    return { success: false, message: "Network error. Check your connection." };
+  }
+}
+
+async function kaInit() {
+  const r = await kaPost({
+    type: "init",
+    name: KEYAUTH_APP.name,
+    ownerid: KEYAUTH_APP.ownerid,
+    ver: KEYAUTH_APP.ver,
+    hash: "none"
+  });
+  if (r && r.sessionid) return r.sessionid;
+  if (r && r.message) console.error("KeyAuth init error:", r.message);
+  return "";
+}
+
+function setAuthButtonsLoading(loading){
+  id("btn-login").disabled = loading;
+  id("btn-register").disabled = loading;
+  id("btn-login").textContent = loading ? "Please wait..." : "Log In";
+  id("btn-register").textContent = loading ? "Please wait..." : "Create Account";
+}
+
+function getSubNames(payload) {
+  const out = [];
+  const add = (v) => { if (typeof v === "string" && v.trim()) out.push(v.trim().toLowerCase()); };
+  if (Array.isArray(payload && payload.subscriptions)) {
+    for (const s of payload.subscriptions) {
+      if (typeof s === "string") add(s);
+      else if (s && typeof s === "object") add(s.name || s.subscription || s.sub || "");
+    }
+  }
+  if (payload && payload.info && Array.isArray(payload.info.subscriptions)) {
+    for (const s of payload.info.subscriptions) {
+      if (typeof s === "string") add(s);
+      else if (s && typeof s === "object") add(s.name || s.subscription || s.sub || "");
+    }
+  }
+  return out;
+}
+
+function applyLicenseGate(licensed) {
+  const cards = document.querySelectorAll('.cards-section .card');
+  const notice = id("license-notice");
+  if (licensed) {
+    cards.forEach(c => c.classList.remove("card-locked"));
+    if (notice) { notice.classList.remove("show"); notice.style.display = "none"; }
+  } else {
+    cards.forEach(c => c.classList.add("card-locked"));
+    if (notice) notice.classList.add("show");
+  }
+}
+
+function unlockContent(username, licensed) {
+  id("auth-overlay").style.display = "none";
+  id("main-content").classList.remove("content-locked");
+  id("session-user").textContent = "@" + username;
+  localStorage.setItem(AUTH_STATE_KEY, username);
+  localStorage.setItem(AUTH_LICENSE_KEY, licensed ? "1" : "0");
+  applyLicenseGate(licensed);
+  toast(licensed ? "Welcome back, " + username + "." : "Logged in. No active license — products locked.", licensed);
+}
+
+async function doLogin(e){
+  e.preventDefault();
+  const username = id("login-user").value.trim();
+  const pass = id("login-pass").value;
+  if (!username || !pass) return setAuthMessage("Please fill all fields.", "err");
+
+  setAuthButtonsLoading(true);
+  setAuthMessage("Signing in...", "info");
+
+  const sid = await kaInit();
+  if (!sid) {
+    setAuthButtonsLoading(false);
+    const initCheck = await kaPost({ type: "init", name: KEYAUTH_APP.name, ownerid: KEYAUTH_APP.ownerid, ver: KEYAUTH_APP.ver, hash: "none" });
+    const reason = (initCheck && initCheck.message) ? initCheck.message : "Could not connect to KeyAuth.";
+    return setAuthMessage("Init failed: " + reason, "err");
+  }
+
+  const result = await kaPost({
+    type: "login",
+    user: username,
+    username,
+    pass,
+    sessionid: sid,
+    name: KEYAUTH_APP.name,
+    ownerid: KEYAUTH_APP.ownerid
+  });
+
+  setAuthButtonsLoading(false);
+  if (!result || !result.success) {
+    const msg = (result && result.message) ? result.message : "Login failed.";
+    if (msg.toLowerCase().includes("hwid")) {
+      return setAuthMessage("Login failed: Disable 'Force HWID' in your KeyAuth app settings to allow web login.", "err");
+    }
+    return setAuthMessage(msg, "err");
+  }
+
+  const subs = getSubNames(result);
+  const licensed = subs.length > 0;
+  setAuthMessage("Login successful.", "ok");
+  unlockContent(username, licensed);
+}
+
+async function doRegister(e){
+  e.preventDefault();
+  const username = id("reg-user").value.trim();
+  const pass = id("reg-pass").value;
+  const pass2 = id("reg-pass2").value;
+  const key = id("reg-key").value.trim();
+
+  if (!username || !pass) return setAuthMessage("Please fill username and password.", "err");
+  if (pass.length < 6) return setAuthMessage("Password must be at least 6 chars.", "err");
+  if (pass !== pass2) return setAuthMessage("Passwords do not match.", "err");
+  if (!key) return setAuthMessage("No license key entered, try again.", "err");
+
+  setAuthButtonsLoading(true);
+  setAuthMessage("Validating license and creating account...", "info");
+
+  const sid = await kaInit();
+  if (!sid) {
+    setAuthButtonsLoading(false);
+    const initCheck = await kaPost({ type: "init", name: KEYAUTH_APP.name, ownerid: KEYAUTH_APP.ownerid, ver: KEYAUTH_APP.ver, hash: "none" });
+    const reason = (initCheck && initCheck.message) ? initCheck.message : "Could not connect to KeyAuth.";
+    return setAuthMessage("Init failed: " + reason, "err");
+  }
+
+  const result = await kaPost({
+    type: "register",
+    user: username,
+    username,
+    pass,
+    key,
+    sessionid: sid,
+    name: KEYAUTH_APP.name,
+    ownerid: KEYAUTH_APP.ownerid
+  });
+  setAuthButtonsLoading(false);
+
+  if (!result || !result.success) {
+    const msg = result && result.message ? result.message : "Register failed. Check your license key.";
+    const isDupe = msg.toLowerCase().includes("already") || msg.toLowerCase().includes("exist") || msg.toLowerCase().includes("taken");
+    return setAuthMessage(isDupe ? "Username already taken. Please choose a different one." : msg, "err");
+  }
+
+  setAuthMessage("Account created with active license. You can now login.", "ok");
+  id("login-user").value = username;
+  id("login-pass").value = "";
+  id("reg-pass").value = "";
+  id("reg-pass2").value = "";
+  id("reg-key").value = "";
+  setAuthMode("login");
+}
+
+async function fetchVersion() {
+  try {
+    const r = await fetch('/version');
+    if (!r.ok) throw new Error();
+    return await r.text();
+  } catch {
+    return null;
+  }
+}
+
+async function updateVersion() {
+  const el = document.querySelector('#version span');
+  const version = await fetchVersion();
+  el.textContent = version ? version : 'version unavailable';
+}
+
+const LOADER_DOWNLOAD_URL = "https://example.com/rezsoftware-loader.exe"; // <-- SET YOUR REAL LOADER URL HERE
+
+function downloadLoader(e) {
+  e.preventDefault();
+  if (!LOADER_DOWNLOAD_URL || LOADER_DOWNLOAD_URL.includes("example.com")) {
+    toast("Download URL not configured yet. Set LOADER_DOWNLOAD_URL in the script.", false);
+    return;
+  }
+  window.open(LOADER_DOWNLOAD_URL, "_blank");
+  toast("Starting loader download...", true);
+}
+
+function copyToClipboard(nodeId) {
+  const text = id(nodeId).textContent.trim();
+  navigator.clipboard.writeText(text).then(() => toast("Address copied to clipboard.", true)).catch(() => toast("Failed to copy.", false));
+}
+
+function toggleSupport() {
+  supportOpen = !supportOpen;
+  const panel = id('crypto-panel');
+  const label = id('support-label');
+  const btn = id('support-toggle');
+  const icon = btn.querySelector('i');
+
+  panel.classList.toggle('open', supportOpen);
+  label.textContent = supportOpen ? 'Close' : 'Support the Project';
+  icon.className = supportOpen ? 'ph ph-x' : 'ph ph-heart';
+}
+
+function restoreAuthState(){
+  const user = localStorage.getItem(AUTH_STATE_KEY);
+  const licensed = localStorage.getItem(AUTH_LICENSE_KEY) === "1";
+  if (user) {
+    unlockContent(user, licensed);
+  }
+}
+
+updateVersion();
+restoreAuthState();
+</script>
+</body>
+</html>
