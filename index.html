@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Vortex Menu</title>
+<link rel="icon" href="img/logo.png">
+
+<!-- =================================================================
+     Vortex Menu - komplette Oberflaeche in einer HTML-Datei.
+     Kein externes CSS, keine externen JS-Dateien, kein Build.
+
+     HOSTING
+     Der Inhalt dieses Ordners liegt auf GitHub Pages unter
+
+         https://bkamt.xyz/            -> index.html
+         https://bkamt.xyz/img/logo.png
+
+     In der fxmanifest.lua steht dazu:
+
+         ui_page 'https://bkamt.xyz/?v=1'
+
+     Alle Pfade hier sind relativ, die Seite laeuft also genauso in
+     einem Unterordner (bkamt.xyz/nui/) oder lokal aus der Resource.
+
+     Nach jeder Aenderung an dieser Datei die Version in der
+     fxmanifest.lua hochzaehlen (?v=2), sonst zeigt FiveM die
+     gecachte alte Fassung.
+
+     STEUERUNG
+     Kommt aus client.lua per SendNUIMessage. Der Rueckweg laeuft
+     ueber https://<resourcename>/<callback> - der Name steht weiter
+     unten in RESOURCE_NAME, weil FiveM bei externen Seiten kein
+     GetParentResourceName() bereitstellt.
+================================================================== -->
+
+<style>
+:root {
+    --bg:         rgba(10, 10, 10, .90);
+    --bg-bar:     rgba(4, 4, 4, .94);
+    --bg-banner:  rgba(0, 0, 0, .94);
+    --row-active: #3b3b3b;
+    --line:       rgba(255, 255, 255, .52);
+    --line-soft:  rgba(255, 255, 255, .085);
+    --text:       #f3f3f3;
+    --text-dim:   #bdbdbd;
+    --white:      #ffffff;
+    --w:          360px;
+    --row-h:      33px;
+    --bar-h:      32px;
+    --radius:     10px;
+    --ease:       cubic-bezier(.22, .61, .36, 1);
+    --scroll-ms:  180ms;                     /* Settings -> Smoothness */
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: transparent;                 /* Overlay - Spiel bleibt sichtbar */
+    font-family: "Poppins", "Inter", "Segoe UI", Arial, sans-serif;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+}
+
+.hidden { display: none !important; }
+
+/* ============================ MENUE ============================ */
+.menu {
+    position: absolute;
+    top: 50%;
+    left: 2.4vw;
+    width: var(--w);
+    background: var(--bg);
+    color: var(--text);
+    border-radius: var(--radius);            /* nur die Aussenecken */
+    overflow: hidden;
+    box-shadow: 0 14px 46px rgba(0, 0, 0, .6);
+    transform: translateY(-50%) scale(.965);
+    opacity: 0;
+    transition: opacity .16s var(--ease), transform .16s var(--ease);
+    will-change: opacity, transform;
+}
+
+.menu.show { opacity: 1; transform: translateY(-50%) scale(1); }
+
+.menu[data-pos="center"]      { left: 50%; transform: translate(-50%, -50%) scale(.965); }
+.menu[data-pos="center"].show { transform: translate(-50%, -50%) scale(1); }
+.menu[data-pos="right"]       { left: auto; right: 2.4vw; }
+
+/* ---------------------------- Banner ---------------------------- */
+.banner {
+    height: 108px;
+    background: var(--bg-banner);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.banner img {
+    max-height: 76px;
+    max-width: 62%;
+    object-fit: contain;
+    display: block;
+    animation: logo-in .45s var(--ease);
+}
+
+@keyframes logo-in {
+    from { opacity: 0; transform: translateY(-6px) scale(.9); }
+    to   { opacity: 1; }
+}
+
+/* ---------------------------- Titel ----------------------------- */
+.head {
+    height: var(--bar-h);
+    background: var(--bg-bar);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    text-align: center;
+    overflow: hidden;
+}
+
+.title {
+    line-height: var(--bar-h);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: .2px;
+    color: var(--white);
+}
+
+.title.swap-fwd  { animation: title-fwd  .22s var(--ease); }
+.title.swap-back { animation: title-back .22s var(--ease); }
+
+@keyframes title-fwd  { from { opacity: 0; transform: translateX(12px); } }
+@keyframes title-back { from { opacity: 0; transform: translateX(-12px); } }
+
+/* =========================== LISTE =============================
+   Es werden immer ALLE Zeilen gebaut. Gescrollt wird der ganze
+   Block per transform -> gleitet weich, statt zeilenweise zu springen.
+================================================================ */
+.list-wrap { position: relative; }
+
+.viewport {
+    overflow: hidden;
+    transition: height var(--scroll-ms) var(--ease);
+}
+
+.list {
+    position: relative;
+    transform: translateY(0);
+    transition: transform var(--scroll-ms) var(--ease);
+    will-change: transform;
+}
+
+/* Die Markierung ist ein eigener Balken, der zwischen den Zeilen
+   gleitet - dadurch springt die Auswahl nicht mehr, sondern faehrt
+   weich hoch und runter. Tempo haengt an Settings -> Smoothness. */
+.highlight {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: var(--row-h);
+    background: var(--row-active);
+    opacity: 0;
+    z-index: 0;
+    pointer-events: none;
+    transition: top var(--scroll-ms) var(--ease),
+                opacity .15s var(--ease),
+                background .15s var(--ease);
+}
+
+.highlight.on { opacity: 1; }
+
+/* Beim Menuewechsel soll er nicht quer durchs Bild fliegen */
+.highlight.jump { transition: opacity .15s var(--ease); }
+
+.row {
+    height: var(--row-h);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 0 15px 0 19px;                  /* links Platz fuer den Indikator */
+    font-size: 12.5px;
+    color: var(--text);
+    border-bottom: 1px solid var(--line-soft);
+    cursor: pointer;
+    background: transparent;
+    transition: background .13s var(--ease), color .13s var(--ease);
+}
+
+.row:last-child { border-bottom: none; }
+
+.row:hover:not(.active) { background: rgba(255, 255, 255, .05); }
+
+.row .label {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.row .chevron {
+    font-size: 13px;
+    color: var(--text-dim);
+    letter-spacing: -1px;
+    transition: transform .15s var(--ease), color .13s var(--ease);
+}
+
+/* Zeilen liegen ueber dem gleitenden Balken */
+.row, .section { position: relative; z-index: 1; }
+
+.row.active {
+    background: transparent;              /* Flaeche kommt vom .highlight */
+    color: var(--white);
+}
+
+.row.active .chevron { color: var(--white); transform: translateX(2px); }
+
+/* Werte (Liste / Slider) */
+.row .value {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    color: var(--text-dim);
+    white-space: nowrap;
+}
+
+.row.active .value { color: var(--white); }
+.row .value b      { font-weight: 500; display: inline-block; }
+.row .value b.bump { animation: bump .18s var(--ease); }
+
+@keyframes bump {
+    0%   { transform: scale(1); }
+    45%  { transform: scale(1.16); }
+    100% { transform: scale(1); }
+}
+
+.row .arrow     { font-size: 12px; opacity: .75; transition: opacity .12s, transform .12s; }
+.row .arrow.hit { opacity: 1; transform: scale(1.35); }
+
+/* Toggle-Switch */
+.switch {
+    position: relative;
+    width: 26px;
+    height: 13px;
+    border-radius: 7px;
+    background: rgba(255, 255, 255, .16);
+    flex: none;
+    transition: background .2s var(--ease), box-shadow .2s var(--ease);
+}
+
+.switch i {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #cbcbcb;
+    /* leichter Ueberschwung beim Umschalten */
+    transition: left .24s cubic-bezier(.5, 1.7, .5, 1), background .2s var(--ease), width .18s var(--ease);
+}
+
+.switch.on        { background: rgba(255, 255, 255, .42); box-shadow: 0 0 8px rgba(255, 255, 255, .18); }
+.switch.on i      { left: 15px; background: var(--white); }
+.switch.anim i    { width: 13px; }            /* kurz gestreckt waehrend der Fahrt */
+.switch.anim.on i { left: 11px; }
+
+/* Abschnitt mit Linien */
+.section {
+    height: var(--row-h);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 15px 0 19px;
+    font-size: 12.5px;
+    color: var(--white);
+    border-bottom: 1px solid var(--line-soft);
+}
+
+.section::before,
+.section::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+}
+
+.empty {
+    height: var(--row-h);
+    line-height: var(--row-h);
+    padding: 0 15px 0 19px;
+    font-size: 12.5px;
+    color: var(--text-dim);
+}
+
+/* Eintritts-Animation der Zeilen beim Menuewechsel, gestaffelt */
+.list.fwd  > *:not(.highlight) { animation: row-fwd  .26s var(--ease) backwards; }
+.list.back > *:not(.highlight) { animation: row-back .26s var(--ease) backwards; }
+
+@keyframes row-fwd  { from { opacity: 0; transform: translateX(20px); } }
+@keyframes row-back { from { opacity: 0; transform: translateX(-20px); } }
+
+.list.fwd  > .row.active { animation: row-fwd  .26s var(--ease) backwards; }
+.list.back > .row.active { animation: row-back .26s var(--ease) backwards; }
+
+/* ==================== SCROLL-INDIKATOR (links) ==================
+   Zeigt wie lang der Tab ist, ob man scrollen kann und wo man steht.
+================================================================ */
+.scrollbar {
+    position: absolute;
+    left: 6px;
+    top: 5px;
+    bottom: 5px;
+    width: 3px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, .10);
+    opacity: 0;
+    transition: opacity .18s var(--ease);
+    pointer-events: none;
+    z-index: 2;
+}
+
+.scrollbar.on { opacity: 1; }
+
+.thumb {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    min-height: 14px;
+    border-radius: 3px;
+    background: var(--white);
+    box-shadow: 0 0 6px rgba(255, 255, 255, .35);
+    transition: top var(--scroll-ms) var(--ease), height var(--scroll-ms) var(--ease);
+}
+
+/* Beschreibung */
+.desc {
+    padding: 8px 15px;
+    font-size: 12px;
+    line-height: 1.35;
+    color: var(--text-dim);
+    background: var(--bg-bar);
+    border-top: 1px solid var(--line);
+    animation: desc-in .2s var(--ease);
+}
+
+@keyframes desc-in { from { opacity: 0; } }
+
+/* Footer */
+.footer {
+    height: var(--bar-h);
+    line-height: var(--bar-h);
+    padding: 0 15px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12.5px;
+    color: var(--text);
+    background: var(--bg-bar);
+    border-top: 1px solid var(--line);
+}
+
+/* ======================== NOTIFICATIONS ========================
+   Oben mittig, schwarze Leiste mit Logo links.
+================================================================ */
+.notifications {
+    position: absolute;
+    top: 7vh;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 9px;
+    pointer-events: none;
+}
+
+.notify {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    max-width: 48vw;
+    padding: 11px 22px 11px 17px;
+    background: rgba(6, 6, 6, .93);
+    border-radius: 6px;
+    color: var(--white);
+    font-size: 14px;
+    line-height: 1.25;
+    white-space: nowrap;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .55);
+    animation: notify-in .3s var(--ease);
+}
+
+.notify.out { animation: notify-out .26s var(--ease) forwards; }
+
+.notify img { width: 24px; height: 24px; object-fit: contain; flex: none; }
+
+@keyframes notify-in {
+    from { opacity: 0; transform: translateY(-16px) scale(.96); }
+    to   { opacity: 1; transform: none; }
+}
+
+@keyframes notify-out {
+    to { opacity: 0; transform: translateY(-12px) scale(.97); }
+}
+
+/* ========================= SPECTATORS =========================
+   Oben rechts. Kompakter dunkler Kasten, Text links, darunter eine
+   helle Linie ueber die volle Breite.
+============================================================== */
+.spectators {
+    position: absolute;
+    top: 3.2vh;
+    right: 2.4vw;
+    min-width: 168px;
+    padding: 6px 15px 7px;
+    background: rgba(4, 4, 4, .93);
+    border-bottom: 2px solid var(--white);
+    color: var(--white);
+    font-size: 13px;
+    letter-spacing: .2px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .55);
+    animation: spec-in .26s var(--ease);
+}
+
+@keyframes spec-in { from { opacity: 0; transform: translateY(-10px); } }
+
+.spectators .spec-list {
+    margin-top: 5px;
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.55;
+}
+
+.spectators .spec-list:empty { display: none; }
+
+/* ========================== FREECAM ===========================
+   Untere Bildmitte. Der ausgewaehlte Eintrag steht mittig und ist
+   hell, die anderen laufen nach oben und unten aus.
+   Bedienung: Mausrad (im Spiel ueber client.lua), Klick, Enter.
+============================================================== */
+.freecam {
+    --fc-h: 34px;
+    position: absolute;
+    left: 50%;
+    bottom: 9vh;
+    width: 460px;
+    margin-left: -230px;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity .22s var(--ease), transform .22s var(--ease);
+    pointer-events: none;
+}
+
+.freecam.on { opacity: 1; transform: none; pointer-events: auto; }
+
+.fc-view {
+    height: calc(var(--fc-h) * 5);
+    overflow: hidden;
+    /* oben und unten weich auslaufen lassen */
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 26%, #000 74%, transparent 100%);
+            mask-image: linear-gradient(to bottom, transparent 0%, #000 26%, #000 74%, transparent 100%);
+}
+
+.fc-list {
+    transform: translateY(0);
+    transition: transform var(--scroll-ms) var(--ease);
+    will-change: transform;
+}
+
+.fc-item {
+    height: var(--fc-h);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    opacity: .3;
+    cursor: pointer;
+    transition: opacity .18s var(--ease);
+}
+
+.fc-item span {
+    max-width: 100%;
+    padding: 4px 15px;
+    border-radius: 6px;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 2px 7px rgba(0, 0, 0, .95);
+    background: transparent;
+    transition: background .18s var(--ease), font-size .18s var(--ease);
+}
+
+.fc-item.d2 { opacity: .45; }
+.fc-item.d1 { opacity: .7; }
+
+.fc-item.d0 { opacity: 1; }
+
+/* Der dunkle Balken liegt nur hinter dem Text, nicht ueber die
+   ganze Breite - so wie in der Vorlage. */
+.fc-item.d0 span {
+    font-size: 15px;
+    font-weight: 600;
+    background: rgba(0, 0, 0, .45);
+}
+</style>
+</head>
+
+<body>
+    <!-- =========================== Menue =========================== -->
+    <div id="menu" class="menu hidden" data-pos="left">
+        <div class="banner">
+            <img id="logo" src="img/logo.png" alt="">
+        </div>
+
+        <div class="head">
+            <div class="title" id="title">Main Menu</div>
+        </div>
+
+        <div class="list-wrap">
+            <div class="scrollbar" id="scrollbar"><div class="thumb" id="thumb"></div></div>
+            <div class="viewport" id="viewport">
+                <div class="list" id="list">
+                    <div class="highlight" id="highlight"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="desc hidden" id="desc"></div>
+
+        <div class="footer">
+            <span id="footer-left">Connected: 0</span>
+            <span id="footer-right">1 / 8</span>
+        </div>
+    </div>
+
+    <!-- ======================== Spectators ========================= -->
+    <div class="spectators" id="spectators">
+        <div>Spectators</div>
+        <div class="spec-list" id="spec-list"></div>
+    </div>
+
+    <!-- ========================== FreeCam ========================== -->
+    <div class="freecam" id="freecam">
+        <div class="fc-view">
+            <div class="fc-list" id="fc-list"></div>
+        </div>
+    </div>
+
+    <!-- ======================= Notifications ======================= -->
+    <div class="notifications" id="notifications"></div>
+
+
+<script>
+// ===================================================================
+//  MENUESTRUKTUR
+//  type: (ohne)   normaler Eintrag / Submenu ueber "sub"
+//        toggle   An-Aus-Schalter          -> value: true|false
+//        list     Auswahl per Links/Rechts -> options: [], value: index
+//        slider   Zahlenwert               -> min, max, step, value
+//        section  Ueberschrift mit Linien (nicht anwaehlbar)
+//  arrow: true    erzwingt den >> Pfeil auch ohne Submenu
+//  desc:  Text in der Infozeile unter der Liste
+// ===================================================================
+const MENUS = {
+    main: {
+        title: "Main Menu",
+        items: [
+            { label: "Self Options",    sub: "self"     },
+            { label: "Online Options",  sub: "online"   },
+            { label: "Visual Options",  sub: "visual"   },
+            { label: "Combat Options",  sub: "combat"   },
+            { label: "Weapon Options",  sub: "weapon"   },
+            { label: "Vehicle Options", sub: "vehicle"  },
+            { label: "Misc Options",    sub: "misc"     },
+            { label: "Settings",        sub: "settings" }
+        ]
+    },
+
+    self: {
+        title: "Self Options",
+        items: [
+            { type: "toggle", label: "Godmode",          value: false },
+            { type: "toggle", label: "Infinite Stamina", value: false },
+            { type: "toggle", label: "Noclip",           value: false },
+            { type: "slider", label: "Run Speed", value: 1.0, min: 1.0, max: 3.0, step: 0.1 },
+            { type: "section", label: "Healing" },
+            { label: "Heal Player" },
+            { label: "Give Armor" },
+            { label: "Clean Player" }
+        ]
+    },
+
+    online: {
+        title: "Online Options",
+        items: [
+            { label: "Player List", sub: "players" },
+            { type: "section", label: "Server" },
+            { label: "Session Info" },
+            { label: "Rejoin Session" }
+        ]
+    },
+
+    players: { title: "Player List", items: [] },
+
+    visual: {
+        title: "Visual Options",
+        items: [
+            { type: "toggle", label: "Player ESP",  value: false },
+            { type: "toggle", label: "Vehicle ESP", value: false },
+            { type: "list",   label: "ESP Color", value: 0, options: ["White", "Red", "Green", "Blue", "Purple"] },
+            { type: "section", label: "World" },
+            { type: "list",   label: "Weather", value: 0, options: ["Clear", "Extra Sunny", "Rain", "Thunder", "Snow"] },
+            { type: "slider", label: "Time of Day", value: 12, min: 0, max: 23, step: 1, suffix: ":00" }
+        ]
+    },
+
+    combat: {
+        title: "Combat Options",
+        items: [
+            { type: "toggle", label: "No Recoil", value: false },
+            { type: "toggle", label: "No Spread", value: false },
+            { type: "slider", label: "Damage Multiplier", value: 1, min: 1, max: 10, step: 1, suffix: "x" }
+        ]
+    },
+
+    weapon: {
+        title: "Weapon Options",
+        items: [
+            { label: "Give All Weapons" },
+            { label: "Remove All Weapons" },
+            { type: "toggle", label: "Infinite Ammo", value: false }
+        ]
+    },
+
+    vehicle: {
+        title: "Vehicle Options",
+        items: [
+            { label: "Spawn Vehicle", sub: "vehspawn" },
+            { label: "Repair Vehicle" },
+            { label: "Flip Vehicle" },
+            { type: "section", label: "Tuning" },
+            { type: "toggle", label: "Godmode Vehicle", value: false },
+            { type: "slider", label: "Torque", value: 1, min: 1, max: 10, step: 1, suffix: "x" }
+        ]
+    },
+
+    vehspawn: {
+        title: "Spawn Vehicle",
+        items: [
+            { type: "list", label: "Class", value: 0, options: ["Super", "Sports", "SUV", "Motorcycle"] },
+            { label: "Adder" },
+            { label: "Zentorno" },
+            { label: "T20" }
+        ]
+    },
+
+    misc: {
+        title: "Misc",
+        items: [
+            { label: "Misc Options", sub: "self" },
+            { type: "section", label: "Other Modules" },
+            { label: "FreeCam", arrow: true, action: "freecam" },
+            { label: "Crosshair",              arrow: true },
+            { label: "Resource Manager",       arrow: true },
+            { label: "Resource Manager [DEV]", arrow: true },
+            { label: "Server Stuff", sub: "server" },
+            { label: "RC Car",                 arrow: true },
+            { label: "Custom LUAs",            arrow: true },
+            { label: "Optional Bypasses",      arrow: true }
+        ]
+    },
+
+    server: {
+        title: "Server",
+        items: [
+            { label: "Find Anticheats" },
+            { type: "section", label: "Triggers" },
+            { label: "Find Triggers" },
+            { label: "Search Filter" },
+            { type: "section", label: "Other" },
+            { label: "Dynamic Triggers", sub: "dyntriggers" }
+        ]
+    },
+
+    // Beispielinhalt - zeigt das Scrollen und den Indikator links.
+    // Wird spaeter aus Lua befuellt.
+    dyntriggers: {
+        title: "Dynamic Triggers",
+        items: [
+            { label: "esx:getSharedObject" },
+            { label: "esx:playerLoaded" },
+            { label: "esx:setJob" },
+            { label: "esx_ambulancejob:revive" },
+            { label: "esx_banking:deposit" },
+            { label: "esx_banking:withdraw" },
+            { label: "esx_garage:spawnVehicle" },
+            { label: "esx_inventory:giveItem" },
+            { label: "esx_jobs:setSalary" },
+            { label: "esx_policejob:handcuff" },
+            { label: "esx_shops:buyItem" },
+            { label: "esx_society:washMoney" },
+            { label: "qb-core:getPlayer" },
+            { label: "qb-garages:takeOut" },
+            { label: "qb-phone:sendMessage" },
+            { label: "qb-shops:sellItem" },
+            { label: "vrp:giveMoney" },
+            { label: "vrp:teleport" }
+        ]
+    },
+
+    settings: {
+        title: "Settings",
+        items: [
+            { type: "slider", label: "Smoothness",   value: 5, min: 0, max: 10, step: 1 },
+            { type: "toggle", label: "Descriptions", value: true },
+            { type: "list",   label: "Position", value: 0, options: ["Left", "Center", "Right"] }
+        ]
+    }
+};
+
+
+// ===================================================================
+//  UI LOGIK
+// ===================================================================
+const menuEl   = document.getElementById("menu");
+const viewEl   = document.getElementById("viewport");
+const listEl   = document.getElementById("list");
+const titleEl  = document.getElementById("title");
+const descEl   = document.getElementById("desc");
+const leftEl   = document.getElementById("footer-left");
+const rightEl  = document.getElementById("footer-right");
+const barEl    = document.getElementById("scrollbar");
+const thumbEl  = document.getElementById("thumb");
+const hlEl     = document.getElementById("highlight");
+const notifyEl = document.getElementById("notifications");
+const specEl   = document.getElementById("spectators");
+const specList = document.getElementById("spec-list");
+const LOGO     = "img/logo.png";
+
+// Zeilenhoehe aus dem CSS lesen, damit beides nie auseinanderlaeuft
+const ROW_H = parseFloat(getComputedStyle(document.documentElement)
+                .getPropertyValue("--row-h")) || 33;
+
+let VISIBLE  = 10;
+let showPath = false;
+let showDesc = true;
+
+let stack   = ["main"];
+let index   = 0;
+let offset  = 0;
+let open    = false;
+let players = 0;
+let rows    = [];              // die gebauten Zeilen-Elemente
+
+const current      = () => MENUS[stack[stack.length - 1]];
+const isSelectable = (it) => it && it.type !== "section";
+
+function firstSelectable(items) {
+    for (let i = 0; i < items.length; i++) if (isSelectable(items[i])) return i;
+    return 0;
+}
+
+function setSmoothness(v) {
+    // 0 = sofort, 10 = sehr weich
+    document.documentElement.style.setProperty("--scroll-ms", Math.round(v * 36) + "ms");
+}
+
+// ------------------------------------------------------ Zeile bauen
+function valueText(item) {
+    if (item.type === "list") return item.options[item.value];
+    if (item.type === "slider") {
+        const dec = String(item.step).indexOf(".") !== -1 ? 1 : 0;
+        return item.value.toFixed(dec) + (item.suffix || "");
+    }
+    return "";
+}
+
+function buildRow(item, active, abs) {
+    if (item.type === "section") {
+        const sec = document.createElement("div");
+        sec.className = "section";
+        const s = document.createElement("span");
+        s.textContent = item.label;
+        sec.appendChild(s);
+        return sec;
+    }
+
+    const el = document.createElement("div");
+    el.className = "row" + (active ? " active" : "");
+
+    const label = document.createElement("span");
+    label.className = "label";
+    label.textContent = item.label;
+    el.appendChild(label);
+
+    if (item.type === "toggle") {
+        const sw = document.createElement("span");
+        sw.className = "switch" + (item.value ? " on" : "");
+        sw.appendChild(document.createElement("i"));
+        el.appendChild(sw);
+    } else if (item.type === "list" || item.type === "slider") {
+        const val = document.createElement("span");
+        val.className = "value";
+        if (active) {
+            const l = document.createElement("span");
+            l.className = "arrow";
+            l.innerHTML = "&lsaquo;";
+            val.appendChild(l);
+        }
+        const b = document.createElement("b");
+        b.textContent = valueText(item);
+        val.appendChild(b);
+        if (active) {
+            const r = document.createElement("span");
+            r.className = "arrow";
+            r.innerHTML = "&rsaquo;";
+            val.appendChild(r);
+        }
+        el.appendChild(val);
+    } else if (item.sub || item.arrow) {
+        const ch = document.createElement("span");
+        ch.className = "chevron";
+        ch.innerHTML = "&raquo;";
+        el.appendChild(ch);
+    }
+
+    el.addEventListener("click", function () {
+        if (index !== abs) { index = abs; refresh(); }
+        select();
+    });
+    return el;
+}
+
+// Nur eine einzelne Zeile neu bauen (z.B. wenn sie aktiv/inaktiv wird)
+function refreshRow(i) {
+    const items = current().items;
+    if (i < 0 || i >= items.length || !rows[i]) return;
+    const fresh = buildRow(items[i], i === index, i);
+    listEl.replaceChild(fresh, rows[i]);
+    rows[i] = fresh;
+}
+
+// ------------------------------------------- komplette Liste bauen
+function buildList(anim) {
+    const items = current().items;
+
+    titleEl.textContent = showPath
+        ? (stack.filter(k => k !== "main").map(k => MENUS[k].title).join(" > ") || MENUS.main.title)
+        : current().title;
+
+    listEl.innerHTML = "";
+    listEl.className = "list" + (anim ? " " + anim : "");
+    rows = [];
+
+    // Der gleitende Balken haengt in der Liste und wird nach dem
+    // Leeren wieder eingesetzt - beim Menuewechsel ohne Flug.
+    hlEl.classList.add("jump");
+    listEl.appendChild(hlEl);
+
+    if (items.length === 0) {
+        const e = document.createElement("div");
+        e.className = "empty";
+        e.textContent = "Keine Eintraege";
+        listEl.appendChild(e);
+        viewEl.style.height = ROW_H + "px";
+        rightEl.textContent = "0 / 0";
+        descEl.classList.add("hidden");
+        barEl.classList.remove("on");
+        leftEl.textContent = "Connected: " + players;
+        return;
+    }
+
+    items.forEach(function (item, i) {
+        const el = buildRow(item, i === index, i);
+        if (anim && i < VISIBLE) el.style.animationDelay = (i * 22) + "ms";
+        rows[i] = el;
+        listEl.appendChild(el);
+    });
+
+    // Sichtfenster: so hoch wie noetig, hoechstens VISIBLE Zeilen
+    viewEl.style.height = (Math.min(VISIBLE, items.length) * ROW_H) + "px";
+    refresh();
+
+    // Danach darf der Balken wieder gleiten. Bewusst per setTimeout und
+    // nicht per requestAnimationFrame: rAF steht still, solange das
+    // Fenster nicht sichtbar ist, und die Klasse bliebe haengen.
+    clearTimeout(buildList._t);
+    buildList._t = setTimeout(function () { hlEl.classList.remove("jump"); }, 40);
+}
+
+// ------------------------- Auswahl, Scrollposition und Anzeigen
+function refresh() {
+    const items = current().items;
+    if (!items.length) { hlEl.classList.remove("on"); return; }
+
+    // Markierung an die aktuelle Zeile fahren
+    hlEl.classList.add("on");
+    hlEl.style.top = (index * ROW_H) + "px";
+
+    // Scrollfenster nachfuehren
+    if (index < offset) offset = index;
+    if (index >= offset + VISIBLE) offset = index - VISIBLE + 1;
+    const max = Math.max(0, items.length - VISIBLE);
+    if (offset > max) offset = max;
+
+    // Der ganze Block gleitet - kein zeilenweises Springen
+    listEl.style.transform = "translateY(" + (-offset * ROW_H) + "px)";
+
+    // Scroll-Indikator links
+    if (items.length > VISIBLE) {
+        const h = (VISIBLE / items.length) * 100;
+        barEl.classList.add("on");
+        thumbEl.style.height = h + "%";
+        thumbEl.style.top    = (max ? (offset / max) * (100 - h) : 0) + "%";
+    } else {
+        barEl.classList.remove("on");
+    }
+
+    // Zaehler, Beschreibung, Spielerzahl
+    const total = items.filter(isSelectable).length;
+    const pos   = items.slice(0, index + 1).filter(isSelectable).length;
+    rightEl.textContent = pos + " / " + total;
+    leftEl.textContent  = "Connected: " + players;
+
+    const d = items[index] && items[index].desc;
+    descEl.textContent = showDesc && d ? d : "";
+    descEl.classList.toggle("hidden", !(showDesc && d));
+}
+
+function swapTitle(dir) {
+    titleEl.classList.remove("swap-fwd", "swap-back");
+    void titleEl.offsetWidth;                       // Reflow -> Animation neu starten
+    titleEl.classList.add(dir === "fwd" ? "swap-fwd" : "swap-back");
+}
+
+titleEl.addEventListener("animationend", function () {
+    titleEl.classList.remove("swap-fwd", "swap-back");
+});
+
+listEl.addEventListener("animationend", function () {
+    listEl.classList.remove("fwd", "back");
+});
+
+// ------------------------------------------------------- steuerung
+function move(dir) {
+    const items = current().items;
+    if (!items.length) return;
+
+    const prev = index;
+    let i = index;
+    for (let step = 0; step < items.length; step++) {
+        i = (i + dir + items.length) % items.length;
+        if (isSelectable(items[i])) { index = i; break; }
+    }
+    if (index === prev) return;
+
+    refreshRow(prev);          // alte Zeile normal
+    refreshRow(index);         // neue Zeile markiert
+    refresh();                 // gleitet zur neuen Position
+}
+
+function shift(dir) {
+    const item = current().items[index];
+    if (!item) return;
+
+    if (item.type === "list") {
+        item.value = (item.value + dir + item.options.length) % item.options.length;
+    } else if (item.type === "slider") {
+        const dec = String(item.step).indexOf(".") !== -1 ? 1 : 0;
+        let v = item.value + dir * item.step;
+        v = Math.min(item.max, Math.max(item.min, v));
+        if (v === item.value) return;
+        item.value = parseFloat(v.toFixed(dec));
+    } else {
+        return;
+    }
+
+    applySetting(item);
+    post("select", { menu: stack[stack.length - 1], item: item.label, value: item.value });
+
+    // Nur den Text tauschen, damit die Animationen nicht abreissen
+    const row = rows[index];
+    const b   = row && row.querySelector("b");
+    if (b) {
+        b.textContent = valueText(item);
+        b.classList.remove("bump");
+        void b.offsetWidth;
+        b.classList.add("bump");
+    }
+    const arrows = row ? row.querySelectorAll(".arrow") : [];
+    const a = dir < 0 ? arrows[0] : arrows[1];
+    if (a) { a.classList.add("hit"); setTimeout(() => a.classList.remove("hit"), 130); }
+}
+
+function select() {
+    const item = current().items[index];
+    if (!isSelectable(item)) return;
+
+    if (item.type === "toggle") {
+        item.value = !item.value;
+        applySetting(item);
+        post("select", { menu: stack[stack.length - 1], item: item.label, value: item.value });
+
+        const sw = rows[index] && rows[index].querySelector(".switch");
+        if (sw) {
+            sw.classList.add("anim");
+            sw.classList.toggle("on", item.value);
+            setTimeout(() => sw.classList.remove("anim"), 130);
+        }
+        return;
+    }
+
+    post("select", { menu: stack[stack.length - 1], item: item.label, value: item.value });
+
+    // Eintraege mit eigener Aktion (z.B. FreeCam-Leiste einblenden)
+    if (item.action === "freecam") {
+        setFreecam(!fcOpen);
+        setOpen(false);                 // Menue zu, damit die Sicht frei ist
+        post("closed", {});
+        return;
+    }
+
+    if (item.sub && MENUS[item.sub]) {
+        stack.push(item.sub);
+        index  = firstSelectable(MENUS[item.sub].items);
+        offset = 0;
+        listEl.style.transform = "translateY(0)";
+        swapTitle("fwd");
+        buildList("fwd");
+    }
+}
+
+function back() {
+    if (stack.length > 1) {
+        stack.pop();
+        index  = firstSelectable(current().items);
+        offset = 0;
+        listEl.style.transform = "translateY(0)";
+        swapTitle("back");
+        buildList("back");
+    } else {
+        setOpen(false);
+        post("closed", {});
+    }
+}
+
+function applySetting(item) {
+    if (item.label === "Descriptions") showDesc = item.value;
+    if (item.label === "Smoothness")   setSmoothness(item.value);
+    if (item.label === "Position")     menuEl.dataset.pos = ["left", "center", "right"][item.value];
+}
+
+function setOpen(state) {
+    open = state;
+    if (state) {
+        stack  = ["main"];
+        index  = firstSelectable(MENUS.main.items);
+        offset = 0;
+        listEl.style.transform = "translateY(0)";
+        menuEl.classList.remove("hidden");
+        buildList("fwd");
+        void menuEl.offsetWidth;                    // Reflow -> Einblenden startet
+        menuEl.classList.add("show");
+    } else {
+        menuEl.classList.remove("show");
+        setTimeout(() => { if (!open) menuEl.classList.add("hidden"); }, 170);
+    }
+}
+
+// --------------------------------------------------- notification
+function notify(text, duration) {
+    const el = document.createElement("div");
+    el.className = "notify";
+
+    const img = document.createElement("img");
+    img.src = LOGO;
+    el.appendChild(img);
+
+    const span = document.createElement("span");
+    span.textContent = text;
+    el.appendChild(span);
+
+    notifyEl.appendChild(el);
+
+    setTimeout(function () {
+        el.classList.add("out");
+        setTimeout(() => el.remove(), 280);
+    }, duration || 5000);
+}
+
+// ---------------------------------------------------- spectators
+// Die Leiste bleibt sichtbar, auch wenn niemand zuschaut - nur die
+// Namenszeile darunter kommt dazu. Ganz ausblenden: setSpectators(null)
+function setSpectators(names) {
+    if (names === null) { specEl.classList.add("hidden"); return; }
+    specEl.classList.remove("hidden");
+    specList.textContent = (names || []).join(", ");
+}
+
+// ======================== FREECAM-LEISTE ========================
+//  Eintraege hier pflegen. Ein Eintrag = eine Zeile.
+//  Die Auswahl geht per Mausrad (im Spiel schickt client.lua die
+//  Scroll-Richtung, im Browser das wheel-Event), Klick oder Enter.
+// ================================================================
+const FREECAM = [
+    { id: "explosion", label: "Spawn Explosion" },
+    { id: "particle",  label: "Spawn Particle" },
+    { id: "object",    label: "Spawn Object", value: "ce_xr_ctr2" },
+    { id: "vehicle",   label: "Spawn Vehicle" },
+    { id: "pad",       label: "Spawn Pad" },
+    { id: "teleport",  label: "Teleport To Cam" },
+    { id: "delete",    label: "Delete Object" },
+    { id: "speedup",   label: "Camera Speed +" },
+    { id: "speeddown", label: "Camera Speed -" },
+    { id: "exit",      label: "Exit FreeCam" }
+];
+
+const FC_H     = 34;           // muss zu --fc-h im CSS passen
+const fcEl     = document.getElementById("freecam");
+const fcListEl = document.getElementById("fc-list");
+
+let fcOpen  = false;
+let fcIndex = 0;
+let fcRows  = [];
+
+function fcText(item) {
+    return item.value ? (item.label + " | Object: " + item.value) : item.label;
+}
+
+function fcBuild() {
+    fcListEl.innerHTML = "";
+    fcRows = [];
+
+    // Zwei Leerzeilen oben und unten, damit der erste und letzte
+    // Eintrag ebenfalls mittig stehen koennen.
+    for (let i = 0; i < 2; i++) fcListEl.appendChild(fcPad());
+
+    FREECAM.forEach(function (item, i) {
+        const el = document.createElement("div");
+        el.className = "fc-item";
+        const sp = document.createElement("span");
+        sp.textContent = fcText(item);
+        el.appendChild(sp);
+        el.addEventListener("click", function () {
+            if (fcIndex === i) { fcSelect(); } else { fcIndex = i; fcRefresh(); }
+        });
+        fcRows[i] = el;
+        fcListEl.appendChild(el);
+    });
+
+    for (let i = 0; i < 2; i++) fcListEl.appendChild(fcPad());
+    fcRefresh();
+}
+
+function fcPad() {
+    const p = document.createElement("div");
+    p.className = "fc-item";
+    p.style.visibility = "hidden";
+    p.innerHTML = "<span>.</span>";
+    return p;
+}
+
+function fcRefresh() {
+    // Der gewaehlte Eintrag rutscht in die Mitte des Fensters
+    fcListEl.style.transform = "translateY(" + (-fcIndex * FC_H) + "px)";
+
+    fcRows.forEach(function (el, i) {
+        const d = Math.abs(i - fcIndex);
+        el.className = "fc-item" + (d <= 2 ? " d" + d : "");
+    });
+}
+
+function fcNav(dir) {
+    if (!fcOpen) return;
+    const next = fcIndex + dir;
+    if (next < 0 || next >= FREECAM.length) return;   // nicht umlaufen
+    fcIndex = next;
+    fcRefresh();
+}
+
+function fcSelect() {
+    if (!fcOpen) return;
+    const item = FREECAM[fcIndex];
+
+    if (item.id === "exit") { setFreecam(false); return; }
+
+    post("select", { menu: "freecam", item: item.label, value: item.value });
+
+    // kurzes Aufblitzen als Rueckmeldung
+    const sp = fcRows[fcIndex] && fcRows[fcIndex].querySelector("span");
+    if (sp) {
+        sp.style.transition = "none";
+        sp.style.background = "rgba(255,255,255,.32)";
+        setTimeout(function () { sp.style.transition = ""; sp.style.background = ""; }, 130);
+    }
+}
+
+function setFreecam(state) {
+    fcOpen = state;
+    fcEl.classList.toggle("on", state);
+    if (state) { fcIndex = 0; fcRefresh(); }
+    post("freecam", { state: state });
+}
+
+// Mausrad: im Browser direkt, im Spiel schickt client.lua "fcnav".
+window.addEventListener("wheel", function (e) {
+    if (!fcOpen) return;
+    e.preventDefault();
+    fcNav(e.deltaY > 0 ? 1 : -1);
+}, { passive: false });
+
+fcBuild();
+
+// ============================ BRIDGE ============================
+//
+//  Liegt die Seite in der Resource (nui://vortex_menu/html/index.html),
+//  gibt es GetParentResourceName() und der Name kommt von dort.
+//
+//  Liegt sie extern (https://bkamt.xyz/nui/index.html), spritzt
+//  FiveM diese Funktion NICHT ein. Dann wird RESOURCE_NAME benutzt.
+//  >>> Dieser Name muss exakt dem Ordnernamen der Resource entsprechen. <<<
+//
+//  Der Rueckweg https://<resource>/<callback> funktioniert in beiden
+//  Faellen, weil CEF diesen Hostnamen abfaengt - unabhaengig davon,
+//  von welcher Domain die Seite selbst geladen wurde.
+// ================================================================
+const RESOURCE_NAME = "vortex_menu";
+
+// Laeuft die Seite im Spiel oder im Browser?
+const IN_GAME =
+       (typeof GetParentResourceName === "function")
+    || (typeof window.invokeNative === "function")
+    || /CitizenFX|FiveM/i.test(navigator.userAgent);
+
+function resourceName() {
+    try {
+        if (typeof GetParentResourceName === "function") return GetParentResourceName();
+    } catch (e) {}
+    return RESOURCE_NAME;
+}
+
+function post(name, data) {
+    if (!IN_GAME) return;                        // Browser-Vorschau
+    fetch("https://" + resourceName() + "/" + name, {
+        method: "POST",
+        headers: { "Content-Type": "application/json; charset=UTF-8" },
+        body: JSON.stringify(data || {})
+    }).catch(function () {});
+}
+
+window.addEventListener("message", function (e) {
+    const d = e.data || {};
+    switch (d.action) {
+        case "config":
+            VISIBLE  = d.visibleRows || VISIBLE;
+            showPath = !!d.showPath;
+            if (typeof d.smoothness === "number") {
+                setSmoothness(d.smoothness);
+                const s = MENUS.settings.items.find(it => it.label === "Smoothness");
+                if (s) s.value = d.smoothness;
+            }
+            buildList(null);
+            break;
+        case "open":       setOpen(true);  break;
+        case "close":      setOpen(false); break;
+        case "nav":        if (open) move(d.dir);  break;
+        case "shift":      if (open) shift(d.dir); break;
+        case "select":     if (open) select();     break;
+        case "back":       if (open) back();       break;
+        case "stats":      players = d.players || 0; if (open) refresh(); break;
+        case "notify":     notify(d.text, d.duration); break;
+        case "spectators": setSpectators(d.players);   break;
+
+        // FreeCam-Leiste: Lua schickt Scrollrichtung und Auswahl
+        case "freecam":  setFreecam(!!d.state); break;
+        case "fcnav":    fcNav(d.dir);          break;
+        case "fcselect": fcSelect();            break;
+    }
+});
+
+buildList(null);
+post("ready", {});
+
+
+// ===================================================================
+//  NUR BROWSER-VORSCHAU (start-preview.bat)
+//
+//  Im Spiel (IN_GAME) laeuft hier nichts. Im Browser werden genau die
+//  Nachrichten simuliert, die sonst aus client.lua kaemen, und die
+//  Tastatur darauf gelegt.
+// ===================================================================
+if (!IN_GAME) {
+    const msg = (o) => window.postMessage(o, "*");
+
+    msg({ action: "config", visibleRows: 10, showPath: false, smoothness: 5 });
+    msg({ action: "stats", players: 7 });
+    msg({ action: "open" });
+
+    let specOn = false;
+
+    window.addEventListener("keydown", function (e) {
+        switch (e.key) {
+            case "F5":         e.preventDefault(); msg({ action: open ? "close" : "open" }); break;
+            case "ArrowUp":    e.preventDefault(); msg({ action: "nav",   dir: -1 }); break;
+            case "ArrowDown":  e.preventDefault(); msg({ action: "nav",   dir:  1 }); break;
+            case "ArrowLeft":  e.preventDefault(); msg({ action: "shift", dir: -1 }); break;
+            case "ArrowRight": e.preventDefault(); msg({ action: "shift", dir:  1 }); break;
+            case "Enter":      e.preventDefault(); msg({ action: "select" }); break;
+            case "Backspace":  e.preventDefault(); msg({ action: "back"   }); break;
+            case "Escape":     e.preventDefault(); msg({ action: "close"  }); break;
+
+            // Vorschau-Extras
+            case "n": case "N":
+                msg({ action: "notify", text: 'Anticheat: "WaveShield" Resource Name: "WaveShield"' });
+                break;
+            case "s": case "S":
+                specOn = !specOn;
+                msg({ action: "spectators", players: specOn ? ["Aiko", "Kevin", "Luca"] : [] });
+                break;
+        }
+    });
+}
+</script>
+</body>
+</html>
